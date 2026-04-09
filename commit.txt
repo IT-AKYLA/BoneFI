@@ -1,0 +1,44 @@
+## Added
+- 5 new scam detection metrics: Temporal Entropy, Anti-Fragmentation, Domino Effect, Migration Footprint, Herding Index
+- 9 new API endpoints for revolutionary metrics
+- Docker Compose configuration for all services
+- Nginx reverse proxy for unified access
+- Integration tests for service interaction
+- Batch analysis endpoint for up to 10 tokens
+
+## Changed
+- MSI thresholds: direct proportion replaced with tiered scoring (70/50/30/15)
+- Domino Effect window: reduced from 30s to 15s for better accuracy
+- get_quick_summary now uses anti_fragmentation for real holder count
+- run_api.py host changed from 127.0.0.1 to 0.0.0.0 for Docker
+- Removed Windows event loop policy (not needed in Linux containers)
+
+## Fixed
+- Maximum recursion depth error in get_quick_summary
+- Static files missing in Docker builds
+- Port binding issues in containerized environment
+- 502 Bad Gateway resolved with proper host configuration
+
+## Files Modified
+- backend/data-analysis/src/services/analyzer.py
+- backend/data-analysis/src/api/routes/token_details.py
+- backend/data-analysis/src/api/routes/analysis.py
+- backend/data-analysis/run_api.py
+- backend/data-management/run_api.py
+- backend/data-analysis/requirements.txt
+- backend/data-management/requirements.txt
+- frontend/client-management/BoneFI.html
+- deploy/docker-compose.yml
+- deploy/nginx.conf
+
+## Files Added
+- deploy/docker-compose.prod.yml
+- backend/data-analysis/Dockerfile
+- backend/data-management/Dockerfile
+- tests/integration/test_integration.py
+- tests/integration/conftest.py
+
+## Test Coverage
+- 44 unit tests passed
+- 8 integration tests passed
+- Coverage: 26% (models 100%, cache_keys 100%)

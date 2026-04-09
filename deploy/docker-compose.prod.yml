@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: bonefi-redis
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  data-management:
+    build: ./backend/data-management
+    container_name: bonefi-management
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=WARNING
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  data-analysis:
+    build: ./backend/data-analysis
+    container_name: bonefi-analysis
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=WARNING
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+
+  nginx:
+    image: nginx:alpine
+    container_name: bonefi-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/client-management:/usr/share/nginx/html:ro
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: always
+
+volumes:
+  redis_data:

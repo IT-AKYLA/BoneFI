@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: bonefi-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  data-management:
+    build: ../backend/data-management
+    container_name: bonefi-management
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - RPC_ENDPOINTS=${RPC_ENDPOINTS:-https://api.mainnet-beta.solana.com,https://solana.publicnode.com}
+      - MAX_CONCURRENT=${MAX_CONCURRENT:-50}
+      - BATCH_SIZE=${BATCH_SIZE:-100}
+      - MAX_SIGNATURES=${MAX_SIGNATURES:-20000}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  data-analysis:
+    build: ../backend/data-analysis
+    container_name: bonefi-analysis
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - MGMT_API_URL=http://data-management:8001
+      - ANALYSIS_TIMEOUT=${ANALYSIS_TIMEOUT:-300}
+      - CACHE_TTL=${CACHE_TTL:-3600}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis:
+        condition: service_healthy
+      data-management:
+        condition: service_started
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: bonefi-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ../frontend/client-management/web-dashboard:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - data-analysis
+      - data-management
+    restart: unless-stopped
+
+volumes:
+  redis_data:

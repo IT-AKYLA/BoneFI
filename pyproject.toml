@@ -1,0 +1,25 @@
+[project]
+name = "bonefi"
+version = "1.0.0"
+description = "Bonefi Token Intelligence Platform"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.1.0",
+    "black>=25.1.0",
+    "ruff>=0.9.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/data-analysis/tests", "backend/data-management/tests", "tests/integration"]
+asyncio_mode = "auto"

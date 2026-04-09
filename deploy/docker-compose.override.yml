@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  data-management:
+    volumes:
+      - ./backend/data-management:/app
+    command: python run_api.py --reload
+    environment:
+      - DEBUG=true
+
+  data-analysis:
+    volumes:
+      - ./backend/data-analysis:/app
+    command: python run_api.py --reload
+    environment:
+      - DEBUG=true

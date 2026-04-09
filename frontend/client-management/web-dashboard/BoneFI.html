@@ -1,0 +1,2759 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="BoneFi Platform - Solana Token Analytics & Data Management">
+    <title>BoneFi | Solana Token Intelligence Platform</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0c12;
+            --bg-secondary: #0f111a;
+            --bg-tertiary: #151724;
+            --border: rgba(255, 255, 255, 0.06);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+            --accent: #14f195;
+            --accent-glow: rgba(20, 241, 149, 0.2);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --cyan: #06b6d4;
+            --orange: #e67e22;
+            --blue: #4e79a7;
+            --green: #14f195;
+            --red: #e74c3c;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        .app-container { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 50;
+        }
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 24px 32px;
+            width: calc(100% - 280px);
+            max-width: none;
+        }
+
+        .logo {
+            padding: 28px 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--info) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logo p {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 6px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            margin: 4px 12px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .nav-item:hover {
+            background: rgba(20, 241, 149, 0.08);
+            color: var(--accent);
+        }
+        .nav-item.active {
+            background: rgba(20, 241, 149, 0.12);
+            color: var(--accent);
+            border-left: 2px solid var(--accent);
+        }
+        .nav-category {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-tertiary);
+            padding: 20px 20px 8px 20px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .card:hover {
+            border-color: rgba(20, 241, 149, 0.3);
+        }
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body { 
+            padding: 20px 24px;
+            width: 100%;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .stat-card.blue { border-left: 3px solid var(--blue); }
+        .stat-card.green { border-left: 3px solid var(--green); }
+        .stat-card.red { border-left: 3px solid var(--red); }
+        .stat-card.purple { border-left: 3px solid var(--purple); }
+        .stat-card.orange { border-left: 3px solid var(--orange); }
+        .stat-card.warning { border-left: 3px solid var(--warning); }
+        .stat-card.critical { border-left: 3px solid var(--danger); }
+        .stat-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+        .stat-value.blue { color: var(--blue); }
+        .stat-value.green { color: var(--green); }
+        .stat-value.red { color: var(--red); }
+        .stat-value.purple { color: var(--purple); }
+        .stat-value.orange { color: var(--orange); }
+        .stat-value.warning { color: var(--warning); }
+        .stat-value.critical { color: var(--danger); }
+        .stat-value { font-size: 28px; font-weight: 700; margin-top: 8px; }
+        .stat-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .risk-critical { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; border-radius: 12px; padding: 20px; text-align: center; }
+        .risk-high { background: linear-gradient(135deg, #e67e22, #d35400); color: white; border-radius: 12px; padding: 20px; text-align: center; }
+        .risk-medium { background: linear-gradient(135deg, #f39c12, #e67e22); color: #0a0c10; border-radius: 12px; padding: 20px; text-align: center; }
+        .risk-low { background: linear-gradient(135deg, #14f195, #0ea5e9); color: #0a0c10; border-radius: 12px; padding: 20px; text-align: center; }
+
+        input, textarea, select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+        input[type="text"] {
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+        }
+        textarea {
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+            resize: vertical;
+            min-height: 120px;
+            width: 100%;
+        }
+        button {
+            background: var(--accent);
+            color: #000000;
+            font-weight: 700;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .btn-secondary {
+            background: rgba(20, 241, 149, 0.15);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+        .btn-info {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--info);
+            border: 1px solid var(--info);
+        }
+        .btn-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+        .btn-warning:hover {
+            background: var(--warning);
+            color: #0a0c10;
+        }
+
+        .token-analyzer-card { width: 100%; }
+        .token-analyzer-card .input-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+        }
+        .token-analyzer-card .input-group input[type="text"] {
+            flex: 1;
+            min-width: 0;
+            width: auto;
+        }
+        .token-analyzer-card .input-group > div {
+            flex-shrink: 0;
+            display: flex;
+            gap: 8px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 12px 16px;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+            font-family: monospace;
+        }
+        tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-critical { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; }
+        .badge-high { background: linear-gradient(135deg, #f97316, #c2410c); color: white; }
+        .badge-medium { background: linear-gradient(135deg, #eab308, #ca8a04); color: #000; }
+        .badge-low { background: linear-gradient(135deg, #22c55e, #15803d); color: white; }
+        .badge-bot { background: rgba(236, 72, 153, 0.2); color: #ec4899; border: 1px solid #ec4899; }
+        .badge-insider { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; border: 1px solid #8b5cf6; }
+        .badge-whale { background: rgba(230, 126, 34, 0.2); color: #e67e22; border: 1px solid #e67e22; }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .log-console {
+            background: #0a0c10;
+            border-radius: 12px;
+            padding: 16px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 11px;
+            border: 1px solid var(--border);
+        }
+        .log-line {
+            padding: 6px 0;
+            border-left: 2px solid transparent;
+            padding-left: 12px;
+            margin-bottom: 4px;
+        }
+        .log-info { border-left-color: var(--info); color: #a0aec0; }
+        .log-success { border-left-color: var(--accent); color: var(--accent); }
+        .log-error { border-left-color: var(--danger); color: var(--danger); }
+        .log-warning { border-left-color: var(--warning); color: var(--warning); }
+
+        .anomaly-list {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        .anomaly-item {
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            font-size: 12px;
+        }
+        .anomaly-critical { border-left: 3px solid var(--red); }
+        .anomaly-high { border-left: 3px solid var(--orange); }
+        .anomaly-medium { border-left: 3px solid var(--warning); }
+
+        .chart-container {
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .chart-container img { width: 100%; height: auto; border-radius: 12px; }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            padding: 12px 20px;
+            background: #0a0c15;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+
+        .pattern-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .pattern-critical { background: var(--red); color: white; }
+        .pattern-warning { background: var(--warning); color: #0a0c10; }
+        .pattern-info { background: var(--info); color: white; }
+        .pattern-success { background: var(--green); color: #0a0c10; }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading, .error { text-align: center; padding: 60px; color: var(--text-tertiary); }
+        .error { color: var(--red); }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .toast.error { border-left-color: var(--danger); }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .bubble-tooltip {
+            position: absolute;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--text-tertiary);
+            font-size: 11px;
+            text-align: center;
+        }
+
+        #globalStats { display: none; }
+        #importTab.active #globalStats,
+        #tokensTab.active #globalStats,
+        #settingsTab.active #globalStats,
+        #statsTab.active #globalStats {
+            display: grid;
+        }
+
+        #importTab.active .token-analyzer-card,
+        #tokensTab.active .token-analyzer-card,
+        #settingsTab.active .token-analyzer-card,
+        #statsTab.active .token-analyzer-card {
+            display: none;
+        }
+
+        #dashboardTab.active .token-analyzer-card,
+        #holdersTab.active .token-analyzer-card,
+        #bubblemapTab.active .token-analyzer-card,
+        #metricsTab.active .token-analyzer-card,
+        #chartTab.active .token-analyzer-card,
+        #historyTab.active .token-analyzer-card,
+        #schedulerTab.active .token-analyzer-card {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 16px;
+            }
+            .token-analyzer-card .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .token-analyzer-card .input-group > div {
+                justify-content: stretch;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .holder-item {
+            transition: all 0.2s ease;
+        }
+        .holder-item:hover {
+            background: rgba(20, 241, 149, 0.1) !important;
+        }
+
+        .echarts-tooltip {
+            background: rgba(18, 23, 35, 0.95) !important;
+            border: 1px solid var(--accent) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(8px) !important;
+            color: white !important;
+            font-family: 'Inter', monospace !important;
+            font-size: 11px !important;
+            padding: 10px 14px !important;
+        }
+        #bubbleMapChart {
+            width: 100% !important;
+            min-width: 800px !important;
+            height: 600px !important;
+            position: relative !important;
+        }
+        #bubbleMapChart > div:first-child {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .card-body:has(#bubbleMapChart) {
+            padding: 16px !important;
+            overflow: visible !important;
+        }
+        #bubbleMapChart canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .btn-danger-sm {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger-sm:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .cache-indicator {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(20, 241, 149, 0.2);
+            color: var(--accent);
+            margin-left: 12px;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>💀 BONEFI</h1>
+                <p>Solana Token Intelligence</p>
+            </div>
+            
+            <div class="nav-category">DATA MANAGEMENT</div>
+            <div class="nav-item" data-tab="import">
+                <span>📦</span> Batch Import
+            </div>
+            <div class="nav-item" data-tab="tokens">
+                <span>🗄️</span> Token Cache
+            </div>
+            <div class="nav-item" data-tab="settings">
+                <span>⚙️</span> API Settings
+            </div>
+            
+            <div class="nav-category">ANALYTICS</div>
+            <div class="nav-item active" data-tab="dashboard">
+                <span>📊</span> Dashboard
+            </div>
+            <div class="nav-item" data-tab="holders">
+                <span>👥</span> Top Holders
+            </div>
+            <div class="nav-item" data-tab="bubblemap">
+                <span>🗺️</span> BubbleMap
+            </div>
+            <div class="nav-item" data-tab="metrics">
+                <span>🤖</span> Advanced Metrics
+            </div>
+            <div class="nav-item" data-tab="chart">
+                <span>📈</span> Activity Chart
+            </div>
+            <div class="nav-item" data-tab="history">
+                <span>📜</span> History
+            </div>
+            
+            <div class="nav-category">SYSTEM</div>
+            <div class="nav-item" data-tab="scheduler">
+                <span>⏰</span> Scheduler
+            </div>
+            <div class="nav-item" data-tab="stats">
+                <span>📉</span> System Stats
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1 style="font-size: 28px; font-weight: 700;">Token Intelligence Platform</h1>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">Real-time Solana token analysis & scam detection</p>
+                </div>
+                <div class="card" style="padding: 8px 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span id="healthIndicator" style="width: 10px; height: 10px; border-radius: 50%; background: gray;"></span>
+                        <span id="healthText" style="font-size: 13px;">Checking APIs...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-grid" id="globalStats">
+                <div class="stat-card">
+                    <div class="stat-label">📦 Tokens in Cache</div>
+                    <div class="stat-value" id="statTokens">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">📊 Total Analyzed</div>
+                    <div class="stat-value" id="statAnalyzed">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">⚠️ Critical Risk</div>
+                    <div class="stat-value" id="statCritical">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">🤖 Bots Detected</div>
+                    <div class="stat-value" id="statBots">0</div>
+                </div>
+            </div>
+            
+            <div class="card token-analyzer-card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <span style="font-weight: 600;">🔍 Token Analyzer</span>
+                    <span style="font-size: 12px; color: var(--text-tertiary);">Enter Solana mint address</span>
+                </div>
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" id="tokenAddress" placeholder="GmHwU83bB1QrdfdnoaoVKQjNBJQbtc32nTTJmjMApump">
+                        <div style="display: flex; gap: 8px;">
+                            <select id="earlyMinutes">
+                                <option value="5">5 min</option>
+                                <option value="10">10 min</option>
+                                <option value="15" selected>15 min</option>
+                                <option value="30">30 min</option>
+                            </select>
+                            <button id="analyzeBtn">🔍 Analyze</button>
+                            <button id="collectBtn" class="btn-secondary">📥 Collect Data</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="dashboardTab" class="tab-content active">
+                <div id="dashboardContent"><div class="loading">Enter a token address and click Analyze</div></div>
+            </div>
+            
+            <div id="holdersTab" class="tab-content">
+                <div id="holdersContent"></div>
+            </div>
+            
+            <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+            <div id="bubblemapTab" class="tab-content">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 3; min-width: 300px;">
+                        <div class="card">
+                            <div class="card-header">
+                                <span style="font-weight: 600;">🗺️ Holder Distribution Map</span>
+                                <div style="display: flex; gap: 8px;">
+                                    <button id="zoomInBtn" class="btn-secondary" style="padding: 6px 12px;">🔍 Zoom In</button>
+                                    <button id="zoomOutBtn" class="btn-secondary" style="padding: 6px 12px;">🔍 Zoom Out</button>
+                                    <button id="resetViewBtn" class="btn-secondary" style="padding: 6px 12px;">⟳ Reset</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="bubbleMapChart" style="width: 100%; height: 600px; background: var(--bg-tertiary); border-radius: 16px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 280px;">
+                        <div class="card">
+                            <div class="card-header">
+                                <span style="font-weight: 600;">🏆 Top Holders</span>
+                                <span id="holdersCount" style="font-size: 11px; color: var(--text-tertiary);"></span>
+                            </div>
+                            <div class="card-body" style="padding: 0; max-height: 660px; overflow-y: auto;">
+                                <div id="topHoldersList" style="padding: 16px;">
+                                    <div class="loading">Loading holders...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="metricsTab" class="tab-content">
+                <div id="metricsContent"></div>
+            </div>
+            
+            <div id="chartTab" class="tab-content">
+                <div id="chartContent"></div>
+            </div>
+            
+            <div id="historyTab" class="tab-content">
+                <div id="historyContent"></div>
+            </div>
+            
+            <div id="importTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span style="font-weight: 600;">📥 Batch Token Import</span>
+                        <button id="startCollectionBtn" class="btn-secondary">▶ Start Collection</button>
+                    </div>
+                    <div class="card-body">
+                        <textarea id="tokensBatch" placeholder="Enter token addresses (one per line)&#10;&#10;Example:&#10;GmHwU83bB1QrdfdnoaoVKQjNBJQbtc32nTTJmjMApump&#10;9oSffRHv2y3reTkCfgzuM93ugLqC5ZaTY57xyKEfpump"></textarea>
+                        <div style="display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 12px;">Mode:</span>
+                                <select id="collectMode">
+                                    <option value="earliest">Earliest signatures</option>
+                                    <option value="latest">Latest signatures</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 12px;">Limit:</span>
+                                <input type="number" id="collectLimit" value="50000" step="10000" style="width: 100px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="jobStatusPanel" class="card" style="margin-top: 20px; display: none;">
+                    <div class="card-header">
+                        <span style="font-weight: 600;">⏳ Collection Job Status</span>
+                        <button id="refreshJobBtn" class="btn-secondary" style="padding: 6px 16px;">Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span id="jobStatusText">Running...</span>
+                            <span id="jobProgressText">0/0</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" id="jobProgressFill"></div></div>
+                        <div style="display: flex; gap: 16px; margin-top: 12px;">
+                            <span>✅ Success: <strong id="jobSuccess">0</strong></span>
+                            <span>❌ Failed: <strong id="jobFailed">0</strong></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <span style="font-weight: 600;">📋 Console Log</span>
+                        <button id="clearLogsBtn" class="btn-secondary" style="padding: 4px 12px;">Clear</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="log-console" id="logConsole">
+                            <div class="log-line log-info">> Ready. Enter token addresses and click Start Collection.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tokensTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span style="font-weight: 600;">🗄️ Cached Tokens</span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span id="tokensCacheIndicator" class="cache-indicator">📦 Cached</span>
+                            <button id="refreshTokensBtn" class="btn-secondary" style="padding: 6px 16px;">⟳ Refresh</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr><th>#</th><th>Token Address</th><th>Transactions</th><th>Collected</th><th>Actions</th></tr>
+                                </thead>
+                                <tbody id="tokensTableBody">
+                                    <tr><td colspan="5" style="text-align: center; padding: 40px;">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="settingsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header"><span style="font-weight: 600;">⚙️ API Configuration</span></div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; margin-bottom: 6px;">Data Management API URL</label>
+                                <input type="text" id="mgmtApiUrl" value="http://localhost:8001" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; margin-bottom: 6px;">Analysis API URL</label>
+                                <input type="text" id="analysisApiUrl" value="http://localhost:8000" style="width: 100%;">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 12px; margin-bottom: 6px;">Admin API Key (for DELETE operations)</label>
+                            <input type="password" id="apiKey" placeholder="Enter your admin API key" style="width: 100%;">
+                        </div>
+                        <button id="saveSettingsBtn" style="width: 100%;">💾 Save Settings</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="schedulerTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <span style="font-weight: 600;">⏰ Scheduler Controls</span>
+                        <span style="font-size: 11px; color: var(--text-tertiary);">Автоматическое сканирование новых токенов</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-card blue">
+                                <div class="stat-label">Status</div>
+                                <div class="stat-value blue" id="schedulerRunning">-</div>
+                            </div>
+                            <div class="stat-card green">
+                                <div class="stat-label">Analyzed Tokens</div>
+                                <div class="stat-value green" id="schedulerCount">-</div>
+                            </div>
+                            <div class="stat-card orange">
+                                <div class="stat-label">Scan Interval</div>
+                                <div class="stat-value orange" id="schedulerInterval">60 min</div>
+                            </div>
+                            <div class="stat-card purple">
+                                <div class="stat-label">Last Scan</div>
+                                <div class="stat-value purple" id="schedulerLast" style="font-size: 14px;">-</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px;">
+                            <button id="startSchedulerBtn" class="btn-secondary">▶ Start Scheduler</button>
+                            <button id="stopSchedulerBtn" class="btn-danger">⏹ Stop Scheduler</button>
+                            <button id="scanNowBtn" class="btn-secondary">🔄 Scan New Tokens</button>
+                            <button id="reanalyzeBtn" class="btn-info" style="display: none;">🔄 Reanalyze Token</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="statsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header"><span style="font-weight: 600;">📊 System Statistics</span></div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-card"><div class="stat-label">Redis Memory</div><div class="stat-value" id="redisMemory">-</div></div>
+                            <div class="stat-card"><div class="stat-label">Compressed Data</div><div class="stat-value" id="compressedData">-</div></div>
+                            <div class="stat-card"><div class="stat-label">Max Signatures</div><div class="stat-value" id="maxSignatures">-</div></div>
+                        </div>
+                        <button id="refreshStatsBtn" class="btn-secondary">⟳ Refresh Stats</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                ⚡ BoneFi Platform | Solana On-chain Analytics | Data Management & Token Intelligence
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        lucide.createIcons();
+
+        let isAnalyzing = false;
+        
+        // ============================================
+        // CACHE SYSTEM
+        // ============================================
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 минут
+        
+        class DataCache {
+            constructor() {
+                this.cache = new Map();
+            }
+            
+            set(key, data) {
+                this.cache.set(key, {
+                    data: data,
+                    timestamp: Date.now()
+                });
+                console.log(`[Cache] Stored: ${key}`);
+            }
+            
+            get(key) {
+                const item = this.cache.get(key);
+                if (!item) {
+                    console.log(`[Cache] Miss: ${key}`);
+                    return null;
+                }
+                
+                const age = Date.now() - item.timestamp;
+                if (age > CACHE_DURATION) {
+                    console.log(`[Cache] Expired: ${key} (age: ${Math.round(age/1000)}s)`);
+                    this.cache.delete(key);
+                    return null;
+                }
+                
+                console.log(`[Cache] Hit: ${key} (age: ${Math.round(age/1000)}s)`);
+                return item.data;
+            }
+            
+            invalidate(key) {
+                this.cache.delete(key);
+                console.log(`[Cache] Invalidated: ${key}`);
+            }
+            
+            invalidatePattern(prefix) {
+                let count = 0;
+                for (const key of this.cache.keys()) {
+                    if (key.startsWith(prefix)) {
+                        this.cache.delete(key);
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    console.log(`[Cache] Invalidated ${count} keys with prefix: ${prefix}`);
+                }
+            }
+            
+            clear() {
+                this.cache.clear();
+                console.log('[Cache] Cleared all');
+            }
+        }
+        
+        const cache = new DataCache();
+        
+        // Функция обновления индикатора кэша
+        function updateCacheIndicator(elementId, key) {
+            const indicator = document.getElementById(elementId);
+            if (!indicator) return;
+            
+            const item = cache.get(key);
+            if (item) {
+                const age = Date.now() - item.timestamp;
+                const secondsLeft = Math.max(0, Math.floor((CACHE_DURATION - age) / 1000));
+                indicator.innerHTML = `📦 Cached (${secondsLeft}s)`;
+                indicator.style.opacity = '1';
+            } else {
+                indicator.innerHTML = `📦 No cache`;
+                indicator.style.opacity = '0.5';
+            }
+        }
+        
+        // Периодическое обновление индикаторов
+        setInterval(() => {
+            updateCacheIndicator('tokensCacheIndicator', 'tokens');
+            updateCacheIndicator('historyCacheIndicator', 'history');
+        }, 1000);
+        
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        let config = {
+            mgmtApi: localStorage.getItem('mgmtApi') || 'http://localhost:8001',
+            analysisApi: localStorage.getItem('analysisApi') || 'http://localhost:8000',
+            apiKey: localStorage.getItem('apiKey') || ''
+        };
+
+        console.log('API Config:', config);
+        
+        let currentJobId = null;
+        let jobInterval = null;
+        let currentAnalysis = null;
+        
+        document.getElementById('mgmtApiUrl').value = config.mgmtApi;
+        document.getElementById('analysisApiUrl').value = config.analysisApi;
+        document.getElementById('apiKey').value = config.apiKey;
+        
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${isError ? 'error' : ''}`;
+            toast.innerHTML = `${isError ? '⚠️' : '✓'} ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        function addLog(message, type = 'info') {
+            const consoleEl = document.getElementById('logConsole');
+            if (!consoleEl) return;
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `log-line log-${type}`;
+            div.innerHTML = `<span style="color:#64748b">[${time}]</span> ${message}`;
+            consoleEl.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function formatNumber(num) {
+            if (!num) return '0';
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return num.toString();
+        }
+        
+        function formatMillions(value) {
+            if (value >= 1000) return (value / 1000).toFixed(1) + 'B';
+            if (value >= 1) return value.toFixed(1) + 'M';
+            return (value * 1000).toFixed(1) + 'K';
+        }
+        
+        function formatTime(seconds) {
+            if (!seconds || seconds === 0) return 'N/A';
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            if (minutes > 0) return `${minutes}m`;
+            return `${seconds}s`;
+        }
+        
+        // ============================================
+        // API HEALTH & STATS
+        // ============================================
+        async function checkHealth() {
+            const indicator = document.getElementById('healthIndicator');
+            const text = document.getElementById('healthText');
+            try {
+                const mgmtRes = await fetch(`${config.mgmtApi}/health`).catch(() => null);
+                const analysisRes = await fetch(`${config.analysisApi}/health`).catch(() => null);
+                
+                if (mgmtRes && mgmtRes.ok && analysisRes && analysisRes.ok) {
+                    indicator.style.background = '#14f195';
+                    indicator.style.boxShadow = '0 0 10px #14f195';
+                    text.innerHTML = 'Both APIs Online ✓';
+                    return true;
+                } else {
+                    indicator.style.background = '#ef4444';
+                    text.innerHTML = 'APIs Offline ✗';
+                    return false;
+                }
+            } catch (e) {
+                indicator.style.background = '#ef4444';
+                text.innerHTML = 'APIs Offline ✗';
+                return false;
+            }
+        }
+        
+        async function loadSystemStats() {
+            try {
+                const res = await fetch(`${config.mgmtApi}/stats`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('statTokens').innerText = data.tokens_count || 0;
+                    document.getElementById('redisMemory').innerText = data.redis_memory_mb ? `${data.redis_memory_mb} MB` : '-';
+                    document.getElementById('compressedData').innerText = data.compressed_data_mb ? `${data.compressed_data_mb} MB` : '-';
+                    document.getElementById('maxSignatures').innerText = data.max_signatures_allowed || '-';
+                }
+            } catch (e) { console.error('Stats error:', e); }
+            
+            try {
+                const res = await fetch(`${config.analysisApi}/api/analytics/stats`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('statAnalyzed').innerText = data.total_analyzed || 0;
+                    document.getElementById('statCritical').innerText = (data.by_risk?.CRITICAL || 0);
+                }
+            } catch (e) {}
+        }
+        
+        // ============================================
+        // LOAD TOKENS WITH CACHE
+        // ============================================
+        async function loadTokens(forceRefresh = false) {
+            const tbody = document.getElementById('tokensTableBody');
+            if (!tbody) return;
+            
+            // Проверяем кэш
+            if (!forceRefresh) {
+                const cachedData = cache.get('tokens');
+                if (cachedData) {
+                    renderTokensTable(cachedData);
+                    updateCacheIndicator('tokensCacheIndicator', 'tokens');
+                    return;
+                }
+            }
+            
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Loading...</td></tr>';
+            
+            try {
+                const res = await fetch(`${config.mgmtApi}/tokens?limit=100`);
+                if (!res.ok) throw new Error('Failed to fetch');
+                const tokens = await res.json();
+                
+                // Сохраняем в кэш
+                cache.set('tokens', tokens);
+                updateCacheIndicator('tokensCacheIndicator', 'tokens');
+                
+                renderTokensTable(tokens);
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--danger);">Error: ${e.message}</td></tr>`;
+            }
+        }
+        
+        async function renderTokensTable(tokens) {
+            const tbody = document.getElementById('tokensTableBody');
+            if (!tbody) return;
+            
+            if (!tokens || tokens.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">No tokens in cache</td></tr>';
+                return;
+            }
+            
+            let analyzedTokens = new Set();
+            try {
+                const historyRes = await fetch(`${config.analysisApi}/api/analytics/top-worst?limit=200`);
+                if (historyRes.ok) {
+                    const historyData = await historyRes.json();
+                    historyData.forEach(item => {
+                        if (item.token_mint) {
+                            analyzedTokens.add(item.token_mint);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('Could not fetch history for status check:', e);
+            }
+            
+            tbody.innerHTML = tokens.map((token, i) => {
+                const tokenMint = token.token_mint || token;
+                const hasAnalysis = analyzedTokens.has(tokenMint);
+                const analyzeBtnClass = hasAnalysis ? 'btn-warning' : 'btn-secondary';
+                const analyzeBtnText = hasAnalysis ? '🔄 Re-Analyze' : '🔍 Analyze';
+                
+                return `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td style="font-family: monospace; color: var(--accent);">${tokenMint}</td>
+                        <td>${formatNumber(token.total_transactions)}</td>
+                        <td style="font-size: 11px;">${token.collected_at ? new Date(token.collected_at).toLocaleDateString() : '-'}</td>
+                        <td>
+                            <button onclick="analyzeToken('${tokenMint}')" class="${analyzeBtnClass}" style="padding: 4px 12px; font-size: 11px; margin-right: 6px;">${analyzeBtnText}</button>
+                            <button onclick="deleteToken('${tokenMint}')" class="btn-danger" style="padding: 4px 12px; font-size: 11px;">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        async function deleteToken(mint) {
+            if (!confirm(`Delete token ${mint.slice(0, 12)}...?`)) return;
+            if (!config.apiKey) {
+                showToast('API key required for delete operations', true);
+                return;
+            }
+            try {
+                const res = await fetch(`${config.mgmtApi}/token/${mint}`, {
+                    method: 'DELETE',
+                    headers: { 'X-API-Key': config.apiKey }
+                });
+                if (res.ok) {
+                    showToast('Token deleted');
+                    cache.invalidate('tokens'); // Инвалидируем кэш токенов
+                    loadTokens(true); // Принудительная перезагрузка
+                    loadSystemStats();
+                    addLog(`Deleted token: ${mint.slice(0, 12)}...`, 'success');
+                } else {
+                    throw new Error('Delete failed');
+                }
+            } catch (e) {
+                showToast(e.message, true);
+            }
+        }
+        
+        // ============================================
+        // LOAD HISTORY WITH CACHE
+        // ============================================
+        async function loadHistory(forceRefresh = false) {
+            const container = document.getElementById('historyContent');
+            if (!container) return;
+            
+            // Проверяем кэш
+            if (!forceRefresh) {
+                const cachedData = cache.get('history');
+                if (cachedData) {
+                    renderHistory(cachedData.stats, cachedData.tokens);
+                    updateCacheIndicator('historyCacheIndicator', 'history');
+                    return;
+                }
+            }
+            
+            container.innerHTML = '<div class="loading">Loading history...</div>';
+            
+            try {
+                const statsRes = await fetch(`${config.analysisApi}/api/analytics/stats`);
+                const stats = await statsRes.json();
+                
+                let allTokens = [];
+                let offset = 0;
+                const limit = 100;
+                
+                while (true) {
+                    const response = await fetch(`${config.analysisApi}/api/analytics/top-worst?limit=${limit}&offset=${offset}`);
+                    if (!response.ok) break;
+                    
+                    const tokens = await response.json();
+                    if (!tokens || tokens.length === 0) break;
+                    
+                    allTokens = allTokens.concat(tokens);
+                    if (tokens.length < limit) break;
+                    offset += limit;
+                    if (offset > 10000) break;
+                }
+                
+                // Сохраняем в кэш
+                cache.set('history', { stats, tokens: allTokens });
+                updateCacheIndicator('historyCacheIndicator', 'history');
+                
+                renderHistory(stats, allTokens);
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<div class="error">❌ Failed to load history</div>';
+            }
+        }
+        
+        function renderHistory(stats, topTokens) {
+            const container = document.getElementById('historyContent');
+            
+            if (!topTokens || topTokens.length === 0) {
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">
+                            <span style="font-weight: 600;">📜 Analysis History</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span id="historyCacheIndicator" class="cache-indicator">📦 No cache</span>
+                                <button onclick="clearAllHistory()" class="btn-danger" style="padding: 6px 16px;">🗑️ Clear All</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="loading">No history entries found</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const byRisk = stats.by_risk || {};
+            
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <span style="font-weight: 600;">📜 Analysis History</span>
+                            <span style="margin-left: 12px; font-size: 11px; color: var(--text-tertiary);">
+                                Total: ${stats.total_analyzed || topTokens.length} | 
+                                Critical: ${byRisk.CRITICAL || 0} | 
+                                High: ${byRisk.HIGH || 0} |
+                                Medium: ${byRisk.MEDIUM || 0} |
+                                Low: ${byRisk.LOW || 0}
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span id="historyCacheIndicator" class="cache-indicator">📦 Cached</span>
+                            <button onclick="saveCurrentToHistory()" class="btn-secondary" style="padding: 6px 16px;">💾 Save Current</button>
+                            <button onclick="clearAllHistory()" class="btn-danger" style="padding: 6px 16px;">🗑️ Clear All</button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div class="table-wrapper" style="max-height: 600px; overflow-y: auto;">
+                            <table style="width: 100%;">
+                                <thead style="position: sticky; top: 0; background: var(--bg-secondary);">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Token</th>
+                                        <th>Risk Score</th>
+                                        <th>Risk Level</th>
+                                        <th>Holders</th>
+                                        <th>Bots/Insiders</th>
+                                        <th>Analyzed At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topTokens.map((token, index) => {
+                                        const riskLevel = token.risk_level || (token.risk_score >= 60 ? 'CRITICAL' : token.risk_score >= 35 ? 'HIGH' : token.risk_score >= 15 ? 'MEDIUM' : 'LOW');
+                                        const riskClass = riskLevel === 'CRITICAL' ? 'critical' : (riskLevel === 'HIGH' ? 'high' : (riskLevel === 'MEDIUM' ? 'medium' : 'low'));
+                                        const date = token.analyzed_at ? new Date(token.analyzed_at).toLocaleString() : '-';
+                                        const botsCount = token.bots_count || token.summary?.bots_count || 0;
+                                        const insidersCount = token.insiders_count || token.summary?.insiders_count || 0;
+                                        
+                                        return `
+                                            <tr style="cursor: pointer;" onclick="analyzeToken('${token.token_mint}')">
+                                                <td style="color: var(--text-tertiary);">${index + 1}</td>
+                                                <td style="color: var(--accent); font-family: monospace; font-size: 11px;" title="${token.token_mint}">
+                                                    ${token.token_mint?.slice(0, 8)}...${token.token_mint?.slice(-6)}
+                                                </td>
+                                                <td><strong>${token.risk_score || '-'}</strong></td>
+                                                <td><span class="badge badge-${riskClass}">${riskLevel}</span></td>
+                                                <td>${token.total_holders || token.summary?.total_holders || '-'}</td>
+                                                <td style="font-size: 11px;">🤖 ${botsCount} / 🎯 ${insidersCount}</td>
+                                                <td style="font-size: 11px;">${date}</td>
+                                                <td style="white-space: nowrap;" onclick="event.stopPropagation()">
+                                                    <button onclick="analyzeToken('${token.token_mint}')" class="btn-secondary" style="padding: 4px 10px; font-size: 11px; margin-right: 6px;">👁️ View</button>
+                                                    <button onclick="deleteHistoryEntry('${token.token_mint}')" class="btn-danger" style="padding: 4px 10px; font-size: 11px;">🗑️ Del</button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ${topTokens.length > 0 ? `
+                            <div style="padding: 16px; text-align: center; border-top: 1px solid var(--border);">
+                                <span style="color: var(--text-tertiary); font-size: 12px;">
+                                    📊 Showing ${topTokens.length} tokens in history
+                                </span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            updateCacheIndicator('historyCacheIndicator', 'history');
+        }
+        
+        async function deleteHistoryEntry(mint) {
+            if (!confirm(`Delete history for token ${mint.slice(0, 12)}...? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${config.analysisApi}/api/history/${mint}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showToast(`✅ History deleted for ${mint.slice(0, 12)}...`, false);
+                    cache.invalidate('history'); // Инвалидируем кэш истории
+                    loadHistory(true); // Принудительная перезагрузка
+                } else {
+                    const error = await response.text();
+                    throw new Error(error || 'Delete failed');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast(`❌ Failed to delete: ${error.message}`, true);
+            }
+        }
+        
+        async function clearAllHistory() {
+            if (!confirm('⚠️ WARNING: This will delete ALL analysis history! This action cannot be undone. Are you sure?')) {
+                return;
+            }
+            
+            const confirmText = prompt('Type "DELETE" to confirm:');
+            if (confirmText !== 'DELETE') {
+                showToast('Cancelled', false);
+                return;
+            }
+            
+            showToast('Clearing history, please wait...', false);
+            
+            try {
+                let allTokens = [];
+                let offset = 0;
+                const limit = 100;
+                let hasMore = true;
+                
+                while (hasMore) {
+                    const response = await fetch(`${config.analysisApi}/api/analytics/top-worst?limit=${limit}&offset=${offset}`);
+                    if (!response.ok) break;
+                    
+                    const tokens = await response.json();
+                    if (tokens && tokens.length > 0) {
+                        allTokens = allTokens.concat(tokens);
+                        offset += limit;
+                        hasMore = tokens.length === limit;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+                
+                if (allTokens.length === 0) {
+                    showToast('No history entries found', false);
+                    return;
+                }
+                
+                let deleted = 0;
+                let failed = 0;
+                
+                for (const token of allTokens) {
+                    try {
+                        const deleteRes = await fetch(`${config.analysisApi}/api/history/${token.token_mint}`, {
+                            method: 'DELETE'
+                        });
+                        if (deleteRes.ok) {
+                            deleted++;
+                        } else {
+                            failed++;
+                        }
+                    } catch (e) {
+                        failed++;
+                    }
+                    await new Promise(r => setTimeout(r, 50));
+                }
+                
+                showToast(`✅ Deleted ${deleted} entries, ${failed} failed`, false);
+                cache.invalidate('history'); // Инвалидируем кэш истории
+                loadHistory(true);
+                
+            } catch (error) {
+                console.error('Clear all error:', error);
+                showToast(`❌ Failed to clear history: ${error.message}`, true);
+            }
+        }
+        
+        async function saveCurrentToHistory() {
+            const token = document.getElementById('tokenAddress').value.trim();
+            if (!token) {
+                showToast('Please enter a token address first', true);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${config.analysisApi}/api/analyze/${token}?save_history=true`);
+                if (response.ok) {
+                    showToast(`✅ Analysis saved to history for ${token.slice(0, 12)}...`, false);
+                    cache.invalidate('history'); // Инвалидируем кэш истории
+                    loadHistory(true);
+                } else {
+                    throw new Error('Save failed');
+                }
+            } catch (error) {
+                console.error(error);
+                showToast('Failed to save to history', true);
+            }
+        }
+        
+        // ============================================
+        // BATCH COLLECTION
+        // ============================================
+        async function startBatchCollection() {
+            const input = document.getElementById('tokensBatch').value;
+            const tokens = input.split(/\r?\n/).map(l => l.trim()).filter(l => l && l.length > 30);
+            
+            if (tokens.length === 0) {
+                showToast('No valid token addresses found', true);
+                return;
+            }
+            
+            addLog(`Starting batch collection for ${tokens.length} tokens`, 'info');
+            
+            const mode = document.getElementById('collectMode').value;
+            const limit = parseInt(document.getElementById('collectLimit').value);
+            
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (config.apiKey) headers['X-API-Key'] = config.apiKey;
+                
+                const res = await fetch(`${config.mgmtApi}/collect/batch`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        tokens: tokens,
+                        collect_mode: mode,
+                        early_limit: limit,
+                        delay_seconds: 1,
+                        force: false
+                    })
+                });
+                
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                currentJobId = data.job_id;
+                
+                document.getElementById('jobStatusPanel').style.display = 'block';
+                
+                if (jobInterval) clearInterval(jobInterval);
+                jobInterval = setInterval(checkJobStatus, 3000);
+                await checkJobStatus();
+                
+            } catch (e) {
+                addLog(`Error: ${e.message}`, 'error');
+                showToast(e.message, true);
+            }
+        }
+        
+        async function checkJobStatus() {
+            if (!currentJobId) return;
+            try {
+                const res = await fetch(`${config.mgmtApi}/collect/batch/${currentJobId}/status`);
+                if (!res.ok) {
+                    if (res.status === 404) {
+                        clearInterval(jobInterval);
+                        document.getElementById('jobStatusPanel').style.display = 'none';
+                        currentJobId = null;
+                    }
+                    return;
+                }
+                
+                const status = await res.json();
+                const completed = status.completed || 0;
+                const total = status.total;
+                const success = status.success?.length || 0;
+                const failed = status.failed?.length || 0;
+                
+                document.getElementById('jobProgressText').innerHTML = `${completed}/${total}`;
+                document.getElementById('jobProgressFill').style.width = `${(completed/total)*100}%`;
+                document.getElementById('jobSuccess').innerText = success;
+                document.getElementById('jobFailed').innerText = failed;
+                document.getElementById('jobStatusText').innerHTML = status.status === 'running' ? '⏳ Running...' : '✅ Completed';
+                
+                if (status.status === 'completed') {
+                    clearInterval(jobInterval);
+                    addLog(`Batch completed: ${success} success, ${failed} failed`, success > 0 ? 'success' : 'warning');
+                    cache.invalidate('tokens'); // Инвалидируем кэш токенов после добавления новых
+                    setTimeout(() => {
+                        document.getElementById('jobStatusPanel').style.display = 'none';
+                        currentJobId = null;
+                    }, 5000);
+                    loadTokens(true);
+                    loadSystemStats();
+                }
+            } catch (e) {}
+        }
+        
+        async function collectData() {
+            if (isAnalyzing) {
+                showToast('Please wait, analysis in progress...', false);
+                return;
+            }
+            
+            const token = document.getElementById('tokenAddress').value.trim();
+            if (!token) {
+                showToast('Please enter a token address', true);
+                return;
+            }
+            
+            const collectBtn = document.getElementById('collectBtn');
+            const originalText = collectBtn.innerHTML;
+            
+            isAnalyzing = true;
+            collectBtn.disabled = true;
+            collectBtn.innerHTML = '⏳ Collecting...';
+            
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (config.apiKey) headers['X-API-Key'] = config.apiKey;
+                
+                const res = await fetch(`${config.mgmtApi}/collect/batch`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        tokens: [token],
+                        collect_mode: 'earliest',
+                        early_limit: 50000,
+                        delay_seconds: 0,
+                        force: false
+                    })
+                });
+                
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                const data = await res.json();
+                addLog(`Collection started for ${token.slice(0, 12)}... (Job: ${data.job_id})`, 'success');
+                showToast('Collection started');
+                
+                cache.invalidate('tokens'); // Инвалидируем кэш токенов
+                
+                setTimeout(() => analyzeToken(token), 2000);
+                
+            } catch (e) {
+                addLog(`Collection error: ${e.message}`, 'error');
+                showToast(e.message, true);
+            } finally {
+                isAnalyzing = false;
+                collectBtn.disabled = false;
+                collectBtn.innerHTML = originalText;
+            }
+        }
+        
+        document.getElementById('analyzeBtn').addEventListener('click', () => analyzeToken());
+        document.getElementById('collectBtn').addEventListener('click', () => collectData());
+        
+        async function analyzeToken(address = null) {
+            if (isAnalyzing) {
+                showToast('Analysis already in progress, please wait...', false);
+                return;
+            }
+            
+            const token = address || document.getElementById('tokenAddress').value.trim();
+            if (!token) {
+                showToast('Please enter a token address', true);
+                return;
+            }
+            
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const originalText = analyzeBtn.innerHTML;
+            
+            isAnalyzing = true;
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '⏳ Starting analysis...';
+            
+            document.getElementById('tokenAddress').value = token;
+            addLog(`Starting analysis for token: ${token.slice(0, 12)}...`, 'info');
+            
+            try {
+                const startRes = await fetch(`${config.analysisApi}/api/analyze/${token}?save_history=true`);
+                
+                if (!startRes.ok) {
+                    if (startRes.status === 404) {
+                        showToast('Token not found in cache. Please collect data first.', true);
+                    }
+                    throw new Error(`HTTP ${startRes.status}`);
+                }
+                
+                const startData = await startRes.json();
+                const taskId = startData.task_id;
+                
+                addLog(`Analysis task created: ${taskId}`, 'info');
+                
+                // ИСПРАВЛЕНО: сообщение о том, что анализ может занять несколько минут
+                analyzeBtn.innerHTML = '⏳ Analyzing (may take a few minutes)...';
+                
+                const POLL_INTERVAL_SECONDS = 2;      
+                const ANALYSIS_TIMEOUT_SECONDS = 300; 
+                const maxAttempts = ANALYSIS_TIMEOUT_SECONDS / POLL_INTERVAL_SECONDS;
+            
+                let result = null;
+                let attempts = 0;
+            
+                while (attempts < maxAttempts) {
+                    await new Promise(r => setTimeout(r, POLL_INTERVAL_SECONDS * 1000));
+                
+                    const resultRes = await fetch(`${config.analysisApi}/api/analyze/result/${taskId}`);
+                    const resultData = await resultRes.json();
+                
+                    if (resultData.status === 'completed') {
+                        result = resultData.result;
+                        break;
+                    } else if (resultData.status === 'failed') {
+                        throw new Error(resultData.error || 'Analysis failed');
+                    }
+                
+                    attempts++;
+                    if (attempts % 5 === 0) {
+                        addLog(`Still analyzing... (${attempts * POLL_INTERVAL_SECONDS}s)`, 'info');
+                    }
+                }
+            
+                if (!result) {
+                    throw new Error(`Analysis timeout (${ANALYSIS_TIMEOUT_SECONDS} seconds)`);
+                }
+                
+                currentAnalysis = result;
+                renderDashboard(result);
+                renderHolders(result);
+                renderAdvancedMetrics(result);
+                await renderChart(token);
+                await renderBubbleMap(token);
+                
+                cache.invalidate('history');
+                
+                addLog(`Analysis complete for ${token.slice(0, 12)}...`, 'success');
+                showToast('Analysis completed');
+                
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.querySelector('.nav-item[data-tab="dashboard"]').classList.add('active');
+                document.getElementById('dashboardTab').classList.add('active');
+                
+            } catch (e) {
+                addLog(`Analysis error: ${e.message}`, 'error');
+                showToast(e.message, true);
+            } finally {
+                isAnalyzing = false;
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = originalText;
+            }
+        }
+        
+        function renderDashboard(data) {
+            const risk = data.risk_assessment || {};
+            const summary = data.summary || {};
+            const maliciousSupply = data.malicious_supply_index || {};
+            const revolutionary = data.revolutionary_metrics || {};
+            const antiFrag = data.anti_fragmentation || {};
+            const domino = data.domino_effect || {};
+            const migration = data.migration_footprint || {};
+            const herding = data.herding_index || {};
+            const whale = data.whale_accumulation || {};
+            const sell = data.sell_pressure || {};
+            const preMigration = data.pre_migration || {};
+            const migrationSpeed = data.migration_speed || {};
+            const temporal = data.temporal_entropy || {};
+        
+            const riskLevel = risk.level || 'UNKNOWN';
+            const riskScore = risk.score || 0;
+
+            // Аномалии - только один раз!
+            const anomalies = risk.anomalies || [];
+
+            // Сортируем от самой опасной к самой безопасной (по убыванию баллов)
+            const sortedAnomalies = [...anomalies].sort((a, b) => b.score - a.score);
+        
+            let riskClass = '';
+            if (riskLevel === 'CRITICAL') riskClass = 'risk-critical';
+            else if (riskLevel === 'HIGH') riskClass = 'risk-high';
+            else if (riskLevel === 'MEDIUM') riskClass = 'risk-medium';
+            else riskClass = 'risk-low';
+        
+            // Функция для получения класса цвета по уровню риска
+            function getRiskClass(level) {
+                if (!level) return 'info';
+                if (level === 'CRITICAL') return 'critical';
+                if (level === 'HIGH') return 'warning';
+                if (level === 'MEDIUM') return 'medium';
+                if (level === 'LOW') return 'low';
+                return 'info';
+            }
+        
+            // Функция для получения цвета текста
+            function getRiskColor(level) {
+                if (!level) return '#3b82f6';
+                if (level === 'CRITICAL') return '#ef4444';
+                if (level === 'HIGH') return '#f97316';
+                if (level === 'MEDIUM') return '#eab308';
+                if (level === 'LOW') return '#22c55e';
+                return '#3b82f6';
+            }
+        
+            // Получаем уровни риска для метрик
+            const migrationSpeedLevel = migrationSpeed.risk_score >= 40 ? 'CRITICAL' : (migrationSpeed.risk_score >= 25 ? 'HIGH' : (migrationSpeed.risk_score >= 10 ? 'MEDIUM' : 'LOW'));
+            const antiFragLevel = antiFrag.risk_level || (antiFrag.artificial_inflation_percent >= 70 ? 'CRITICAL' : (antiFrag.artificial_inflation_percent >= 50 ? 'HIGH' : (antiFrag.artificial_inflation_percent >= 30 ? 'MEDIUM' : 'LOW')));
+            const dominoLevel = domino.risk_level || ((domino.coordination_ratio || 0) * 100 >= 50 ? 'CRITICAL' : ((domino.coordination_ratio || 0) * 100 >= 30 ? 'HIGH' : ((domino.coordination_ratio || 0) * 100 >= 15 ? 'MEDIUM' : 'LOW')));
+            const herdingLevel = herding.risk_level || ((herding.herding_index || 0) * 100 >= 80 ? 'CRITICAL' : ((herding.herding_index || 0) * 100 >= 65 ? 'HIGH' : ((herding.herding_index || 0) * 100 >= 50 ? 'MEDIUM' : 'LOW')));
+            const revolutionaryLevel = revolutionary.risk_level || (revolutionary.revolutionary_score >= 70 ? 'CRITICAL' : (revolutionary.revolutionary_score >= 50 ? 'HIGH' : (revolutionary.revolutionary_score >= 30 ? 'MEDIUM' : 'LOW')));
+        
+            // Безопасное получение значений
+            const totalHolders = summary.total_holders || 0;
+            const msiPercent = maliciousSupply.malicious_supply_percent || summary.malicious_supply_percent || 0;
+            const botsCount = summary.bots_count || 0;
+            const insidersCount = summary.insiders_count || 0;
+        
+            let html = `
+                <!-- ПЕРВАЯ СТРОКА: БАЗОВАЯ СТАТИСТИКА -->
+                <div class="stats-grid">
+                    <div class="stat-card ${totalHolders > 1000 ? 'critical' : (totalHolders > 500 ? 'warning' : 'blue')}">
+                        <div class="stat-label">👥 Total Holders</div>
+                        <div class="stat-value ${totalHolders > 1000 ? 'critical' : (totalHolders > 500 ? 'warning' : 'blue')}">${totalHolders}</div>
+                        <div class="stat-label" style="font-size: 9px; margin-top: 4px;">${totalHolders > 1000 ? '🔴 Very high' : (totalHolders > 500 ? '🟡 High' : '🟢 Normal')}</div>
+                    </div>
+                    <div class="stat-card ${msiPercent >= 30 ? 'critical' : (msiPercent >= 15 ? 'warning' : 'blue')}">
+                        <div class="stat-label">⚠️ Malicious Supply (MSI)</div>
+                        <div class="stat-value" style="color: ${msiPercent >= 30 ? '#ef4444' : (msiPercent >= 15 ? '#f97316' : '#14f195')}">${msiPercent}%</div>
+                        <div class="stat-label" style="font-size: 9px; margin-top: 4px;">${msiPercent >= 30 ? '🔴 Critical - Malicious control' : (msiPercent >= 15 ? '🟡 High - Suspicious' : '🟢 Low - Safe')}</div>
+                    </div>
+                    <div class="stat-card ${botsCount > 50 ? 'critical' : (botsCount > 20 ? 'warning' : 'purple')}">
+                        <div class="stat-label">🤖 Bots / 🎯 Insiders</div>
+                        <div class="stat-value ${botsCount > 50 ? 'critical' : (botsCount > 20 ? 'warning' : 'purple')}">${botsCount} / ${insidersCount}</div>
+                        <div class="stat-label" style="font-size: 9px; margin-top: 4px;">${botsCount > 50 ? '🔴 High bot activity' : (botsCount > 20 ? '🟡 Moderate bots' : '🟢 Low bots')}</div>
+                    </div>
+                    <div class="stat-card ${sell.ratio > 1.5 ? 'critical' : (sell.ratio > 1.2 ? 'warning' : 'green')}">
+                        <div class="stat-label">📊 Sell/Buy Ratio</div>
+                        <div class="stat-value ${sell.ratio > 1.5 ? 'critical' : (sell.ratio > 1.2 ? 'warning' : 'green')}">${(sell.ratio || 0).toFixed(2)}</div>
+                        <div class="stat-label" style="font-size: 9px; margin-top: 4px;">${sell.ratio > 1.5 ? '🔴 High sell pressure' : (sell.ratio > 1.2 ? '🟡 Moderate selling' : '🟢 Balanced')}</div>
+                    </div>
+                </div>
+            
+                <!-- ВТОРАЯ СТРОКА: КЛЮЧЕВЫЕ ИНДИКАТОРЫ (сжатая версия) -->
+                <div style="margin: 16px 0 12px 0;">
+                    <h3 style="font-size: 14px; font-weight: 600;">🎯 Key Risk Indicators</h3>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card ${getRiskClass(migrationSpeedLevel)}" style="border-left: 3px solid ${getRiskColor(migrationSpeedLevel)}">
+                        <div class="stat-label">⚡ Migration Speed</div>
+                        <div class="stat-value" style="font-size: 18px; color: ${getRiskColor(migrationSpeedLevel)}">${migrationSpeed.verdict || 'N/A'}</div>
+                        <div class="stat-label">${formatTime(migrationSpeed.seconds_to_migrate)}</div>
+                    </div>
+                    <div class="stat-card ${getRiskClass(antiFragLevel)}" style="border-left: 3px solid ${getRiskColor(antiFragLevel)}">
+                        <div class="stat-label">🔍 Real Holders</div>
+                        <div class="stat-value" style="color: ${getRiskColor(antiFragLevel)}">${antiFrag.estimated_real_holders || 0} / ${antiFrag.total_holders_reported || totalHolders}</div>
+                        <div class="stat-label">${antiFrag.artificial_inflation_percent || 0}% fake</div>
+                    </div>
+                    <div class="stat-card ${getRiskClass(dominoLevel)}" style="border-left: 3px solid ${getRiskColor(dominoLevel)}">
+                        <div class="stat-label">🎲 Coordination</div>
+                        <div class="stat-value" style="color: ${getRiskColor(dominoLevel)}">${(domino.coordination_ratio * 100 || 0).toFixed(1)}%</div>
+                        <div class="stat-label">${domino.coordinated_clusters || 0} clusters</div>
+                    </div>
+                    <div class="stat-card ${getRiskClass(herdingLevel)}" style="border-left: 3px solid ${getRiskColor(herdingLevel)}">
+                        <div class="stat-label">🐑 Herding</div>
+                        <div class="stat-value" style="color: ${getRiskColor(herdingLevel)}">${(herding.herding_index * 100 || 0).toFixed(1)}%</div>
+                        <div class="stat-label">${herding.synchronized_windows || 0} windows</div>
+                    </div>
+                </div>
+            
+                <!-- ТРЕТЬЯ СТРОКА: ДОПОЛНИТЕЛЬНЫЕ МЕТРИКИ -->
+                <div class="stats-grid">
+                    <div class="stat-card ${whale.rate_percent < -5 ? 'warning' : (whale.rate_percent > 5 ? 'green' : 'blue')}">
+                        <div class="stat-label">🐋 Whale Accumulation</div>
+                        <div class="stat-value ${whale.rate_percent < -5 ? 'warning' : (whale.rate_percent > 5 ? 'green' : 'blue')}">${whale.rate_percent || 0}%</div>
+                        <div class="stat-label">Trend: ${whale.trend || 'STABLE'}</div>
+                    </div>
+                    <div class="stat-card ${preMigration.risk_score >= 25 ? 'critical' : (preMigration.risk_score >= 15 ? 'warning' : 'blue')}">
+                        <div class="stat-label">⏰ Pre-Migration</div>
+                        <div class="stat-value blue" style="font-size: 13px;">${preMigration.pattern_type || 'NORMAL'}</div>
+                        <div class="stat-label">Risk: ${preMigration.risk_score || 0}</div>
+                    </div>
+                    <div class="stat-card ${getRiskClass(revolutionaryLevel)}" style="border-left: 3px solid ${getRiskColor(revolutionaryLevel)}">
+                        <div class="stat-label"> REVOLUTIONARY(test) SCORE</div>
+                        <div class="stat-value" style="font-size: 28px; color: ${getRiskColor(revolutionaryLevel)}">${revolutionary.revolutionary_score || 0}</div>
+                        <div class="stat-label">${revolutionary.risk_level || 'UNKNOWN'} | ${revolutionary.scam_type || 'N/A'}</div>
+                    </div>
+                    <div class="stat-card ${msiPercent >= 30 ? 'critical' : (msiPercent >= 15 ? 'warning' : 'blue')}">
+                        <div class="stat-label">🎯 Suspicious Supply</div>
+                        <div class="stat-value" style="color: ${msiPercent >= 30 ? '#ef4444' : (msiPercent >= 15 ? '#f97316' : '#14f195')}">${msiPercent}%</div>
+                        <div class="stat-label">Malicious + Insiders</div>
+                    </div>
+                </div>`;
+            
+            // Risk Card
+            html += `
+                <div class="${riskClass}" style="margin-bottom: 20px; margin-top: 20px;">
+                    <div style="font-size: 48px; font-weight: 800;">${riskScore}</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-top: 8px;">${riskLevel}</div>
+                    <div style="font-size: 12px; margin-top: 8px;">${risk.recommendation || ''}</div>
+                </div>`;
+            
+            // СПИСОК АНОМАЛИЙ (отсортированный от самой опасной)
+            if (sortedAnomalies.length > 0) {
+                html += `
+                    <div class="anomaly-list">
+                        <strong>⚠️ Detected Anomalies (${sortedAnomalies.length})</strong>
+                        ${sortedAnomalies.map(a => {
+                            let anomalyClass = 'anomaly-medium';
+                            if (a.score >= 25) anomalyClass = 'anomaly-critical';
+                            else if (a.score >= 15) anomalyClass = 'anomaly-high';
+
+                            // Индикатор опасности
+                            let dangerIcon = '';
+                            if (a.score >= 50) dangerIcon = '💀 ';
+                            else if (a.score >= 25) dangerIcon = '🔴 ';
+                            else if (a.score >= 15) dangerIcon = '🟠 ';
+                            else dangerIcon = '🟡 ';
+                        
+                            // Краткое пояснение для каждой аномалии
+                            let explanation = '';
+                            if (a.type === 'INSTANT_MIGRATION') explanation = 'Token migrated too fast - automatic scam pattern';
+                            else if (a.type === 'EXPLOSIVE_LAST_MINUTE') explanation = 'Fake volume spike before migration';
+                            else if (a.type === 'MALICIOUS_BOTS') explanation = 'Bots control significant supply';
+                            else if (a.type === 'ROBOTIC_PATTERNS') explanation = 'Automated trading detected';
+                            else if (a.type === 'EARLY_HOLDERS_DUMPED') explanation = 'Insiders sold early';
+                            else if (a.type === 'PRICE_VOLUME_NEUTRAL') explanation = 'Unusual price-volume correlation';
+                            else if (a.type === 'WHALE_DUMPING') explanation = 'Large holders are selling';
+                            else if (a.type === 'SELL_PRESSURE_HIGH') explanation = 'Strong selling pressure detected';
+                            else if (a.type === 'HIGH_ACCELERATION') explanation = 'Rapid holder growth before migration';
+                            else if (a.type === 'EXTREME_ACCELERATION') explanation = 'Extreme holder growth before migration';
+                        
+                            return `
+                                <div class="anomaly-item ${anomalyClass}">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>${dangerIcon}${a.type}</span>
+                                        <span style="font-weight: bold;">${a.score} pts</span>
+                                    </div>
+                                    <div style="font-size: 11px; margin-top: 4px;">${a.detail}</div>
+                                    ${explanation ? `<div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">💡 ${explanation}</div>` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+        
+            // Final Verdict
+            if (revolutionary.recommendation || risk.recommendation) {
+                const finalRecommendation = revolutionary.recommendation || risk.recommendation;
+                const finalLevel = revolutionary.risk_level || riskLevel;
+                const finalScamType = revolutionary.scam_type || 'UNKNOWN';
+                const finalConfidence = revolutionary.confidence || 95;
+            
+                html += `
+                    <div class="anomaly-list" style="margin-top: 20px; background: ${finalLevel === 'CRITICAL' ? 'rgba(239, 68, 68, 0.15)' : (finalLevel === 'HIGH' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(20, 241, 149, 0.1)')};">
+                        <strong>📋 Final Verdict</strong>
+                        <div style="margin-top: 8px; font-size: 14px; font-weight: 500; color: ${getRiskColor(finalLevel)};">
+                            ${finalRecommendation}
+                        </div>
+                        <div style="margin-top: 6px; font-size: 11px; color: var(--text-secondary);">
+                            🎯 Scam Type: ${finalScamType} | Confidence: ${finalConfidence}%
+                        </div>
+                        <div style="margin-top: 6px; font-size: 11px; color: ${getRiskColor(finalLevel)};">
+                            ⚠️ ${finalLevel === 'CRITICAL' ? 'Do not invest - verified scam' : (finalLevel === 'HIGH' ? 'High risk - avoid trading' : 'Exercise caution')}
+                        </div>
+                    </div>
+                `;
+            }
+        
+            document.getElementById('dashboardContent').innerHTML = html;
+        }
+        
+        function renderHolders(data) {
+            const topHolders = data.top_15_holders || [];
+            const preHolders = data.top_15_pre_migration_holders || [];
+            
+            let html = `
+                <div class="card">
+                    <div class="card-header"><span style="font-weight: 600;">🏆 Current Top Holders</span></div>
+                    <div class="card-body">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>#</th><th>Address</th><th>Balance</th><th>Share %</th><th>Type</th></thead>
+                                <tbody>
+                                    ${topHolders.map((h, i) => `
+                                        <tr>
+                                            <td>${i+1}</td>
+                                            <td style="color: var(--accent);">${h.address}</td>
+                                            <td>${formatMillions(h.balance_millions)}</td>
+                                            <td>${h.share_percentage}%</td>
+                                            <td>${h.is_pool ? '🔄 POOL' : (h.share_percentage > 5 ? '🐋 WHALE' : (h.share_percentage > 1 ? '🐳 LARGE' : '👤 HOLDER'))}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header"><span style="font-weight: 600;">📜 Pre-Migration Holders</span></div>
+                    <div class="card-body">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>#</th><th>Address</th><th>Balance</th><th>Share %</th><th>Status</th></thead>
+                                <tbody>
+                                    ${preHolders.map((h, i) => `
+                                        <tr>
+                                            <td>${i+1}</td>
+                                            <td style="color: var(--accent);">${h.address}</td>
+                                            <td>${formatMillions(h.balance_millions)}</td>
+                                            <td>${h.share_percentage}%</td>
+                                            <td style="color: ${h.retained ? '#14f195' : '#e74c3c'};">${h.retained ? '✅ HOLD' : '❌ SOLD'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('holdersContent').innerHTML = html;
+        }
+        
+        function renderAdvancedMetrics(data) {
+            // Существующие метрики с защитой от отсутствия данных
+            const whale = data.whale_accumulation || {};
+            const sell = data.sell_pressure || {};
+            const bots = data.bot_clusters || {};
+            const preMigration = data.pre_migration || {};
+            const migrationSpeed = data.migration_speed || {};
+            const priceVolume = data.price_volume_correlation || {};
+            const maliciousSupply = data.malicious_supply_index || {};
+            const suspiciousSupply = data.suspicious_supply_index || {};
+            const summary = data.summary || {};
+            const riskAssessment = data.risk_assessment || {};
+            const deployerBehavior = data.deployer_behavior || {};
+            const washTrading = data.wash_trading || {};
+
+            // НОВЫЕ революционные метрики
+            const revolutionary = data.revolutionary_metrics || {};
+            const temporalEntropy = data.temporal_entropy || {};
+            const antiFragmentation = data.anti_fragmentation || {};
+            const dominoEffect = data.domino_effect || {};
+            const migrationFootprint = data.migration_footprint || {};
+            const herdingIndex = data.herding_index || {};
+
+            // Функция определения класса для левой границы
+            function getBorderClass(level) {
+                if (!level) return 'info';
+                if (level === 'CRITICAL') return 'critical';
+                if (level === 'HIGH') return 'high';
+                if (level === 'MEDIUM') return 'medium';
+                if (level === 'LOW') return 'low';
+                return 'info';
+            }
+
+            // Функция получения цвета для текста
+            function getTextColor(level) {
+                if (!level) return '#3b82f6';
+                if (level === 'CRITICAL') return '#ef4444';
+                if (level === 'HIGH') return '#f97316';
+                if (level === 'MEDIUM') return '#eab308';
+                if (level === 'LOW') return '#22c55e';
+                return '#3b82f6';
+            }
+
+            // Функция безопасного получения числа
+            function safeValue(value, defaultValue = 0) {
+                if (value === undefined || value === null || isNaN(value)) return defaultValue;
+                return value;
+            }
+
+            // Функция форматирования процентов
+            function formatPercent(value) {
+                const num = safeValue(value);
+                return typeof num === 'number' ? num.toFixed(1) : '0';
+            }
+
+            let html = `
+                <!-- ЗАГОЛОВОК СЕКЦИИ -->
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">📊 On-Chain Metrics</h3>
+                </div>
+
+                <!-- ПЕРВАЯ СТРОКА: БАЗОВАЯ СТАТИСТИКА (из summary) -->
+                <div class="stats-grid">
+                    <div class="stat-card ${safeValue(summary.total_holders) > 1000 ? 'critical' : 'blue'}">
+                        <div class="stat-label">👥 Total Holders</div>
+                        <div class="stat-value ${safeValue(summary.total_holders) > 1000 ? 'critical' : 'blue'}">${safeValue(summary.total_holders)}</div>
+                    </div>
+                    <div class="stat-card ${safeValue(summary.real_holders) < 10 ? 'critical' : 'green'}">
+                        <div class="stat-label">✅ Real Holders</div>
+                        <div class="stat-value ${safeValue(summary.real_holders) < 10 ? 'critical' : 'green'}">${safeValue(summary.real_holders)}</div>
+                    </div>
+                    <div class="stat-card ${safeValue(summary.total_supply_millions) > 1000 ? 'warning' : 'orange'}">
+                        <div class="stat-label">💰 Total Supply</div>
+                        <div class="stat-value ${safeValue(summary.total_supply_millions) > 1000 ? 'warning' : 'orange'}">${formatMillions(safeValue(summary.total_supply_millions))}</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-label">📝 Transactions</div>
+                        <div class="stat-value purple">${formatNumber(safeValue(summary.total_transactions))}</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-label">📈 Buy Volume</div>
+                        <div class="stat-value blue">${formatNumber(safeValue(summary.total_buy_volume))}</div>
+                    </div>
+                    <div class="stat-card red">
+                        <div class="stat-label">📉 Sell Volume</div>
+                        <div class="stat-value red">${formatNumber(safeValue(summary.total_sell_volume))}</div>
+                    </div>
+                    <div class="stat-card ${safeValue(maliciousSupply.malicious_supply_percent) >= 30 ? 'critical' : (safeValue(maliciousSupply.malicious_supply_percent) >= 15 ? 'warning' : 'blue')}">
+                        <div class="stat-label">⚠️ Malicious Supply (MSI)</div>
+                        <div class="stat-value ${safeValue(maliciousSupply.malicious_supply_percent) >= 30 ? 'critical' : (safeValue(maliciousSupply.malicious_supply_percent) >= 15 ? 'warning' : 'blue')}">${formatPercent(maliciousSupply.malicious_supply_percent)}%</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-label">🤖 Bots / 🎯 Insiders</div>
+                        <div class="stat-value purple">${safeValue(summary.bots_count)} / ${safeValue(summary.insiders_count)}</div>
+                    </div>
+                </div>
+
+                <!-- ВТОРАЯ СТРОКА: ТРАДИЦИОННЫЕ МЕТРИКИ -->
+                <div class="stats-grid">
+                    <div class="stat-card ${safeValue(whale.rate_percent) > 5 ? 'critical' : (safeValue(whale.rate_percent) < -5 ? 'warning' : 'blue')}">
+                        <div class="stat-value ${safeValue(whale.rate_percent) > 5 ? 'critical' : (safeValue(whale.rate_percent) < -5 ? 'warning' : 'blue')}">${formatPercent(whale.rate_percent)}%</div>
+                        <div class="stat-label">🐋 Whale Acc. (6h)</div>
+                        <div class="stat-label">Trend: ${whale.trend || 'STABLE'}</div>
+                    </div>
+                    <div class="stat-card ${sell.pressure === 'HIGH' ? 'critical' : (sell.pressure === 'MODERATE' ? 'warning' : 'green')}">
+                        <div class="stat-value ${sell.pressure === 'HIGH' ? 'critical' : (sell.pressure === 'MODERATE' ? 'warning' : 'green')}">${safeValue(sell.ratio).toFixed(2)}</div>
+                        <div class="stat-label">📊 Sell/Buy Ratio</div>
+                        <div class="stat-label">Pressure: ${sell.pressure || 'LOW'}</div>
+                    </div>
+                    <div class="stat-card ${safeValue(bots.total_cluster_share_percent) > 30 ? 'critical' : (safeValue(bots.total_cluster_share_percent) > 15 ? 'warning' : 'orange')}">
+                        <div class="stat-value ${safeValue(bots.total_cluster_share_percent) > 30 ? 'critical' : (safeValue(bots.total_cluster_share_percent) > 15 ? 'warning' : 'orange')}">${safeValue(bots.clusters_found)}</div>
+                        <div class="stat-label">🔗 Bot Clusters</div>
+                        <div class="stat-label">Control: ${formatPercent(bots.total_cluster_share_percent)}%</div>
+                    </div>
+                    <div class="stat-card ${washTrading.is_wash_trading ? 'critical' : 'blue'}">
+                        <div class="stat-value ${washTrading.is_wash_trading ? 'critical' : 'blue'}">${safeValue(washTrading.suspicious_pairs)}</div>
+                        <div class="stat-label">🔄 Suspicious Pairs</div>
+                        <div class="stat-label">Wash Trading: ${washTrading.is_wash_trading ? '⚠️ YES' : 'NO'}</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card ${safeValue(deployerBehavior.sells_before_migration) > 0 ? 'warning' : 'green'}">
+                        <div class="stat-value ${safeValue(deployerBehavior.sells_before_migration) > 0 ? 'warning' : 'green'}">${safeValue(deployerBehavior.sells_before_migration)}</div>
+                        <div class="stat-label">👤 Deployer Sells</div>
+                        <div class="stat-label">${deployerBehavior.behavior || 'HELD'}</div>
+                    </div>
+                    <div class="stat-card ${safeValue(preMigration.risk_score) >= 25 ? 'critical' : (safeValue(preMigration.risk_score) >= 15 ? 'warning' : 'blue')}">
+                        <div class="stat-value blue" style="font-size:14px;">${preMigration.pattern_type || 'NORMAL'}</div>
+                        <div class="stat-label">⏰ Pre-Migration Pattern</div>
+                        <div class="stat-label">Risk: ${safeValue(preMigration.risk_score)}</div>
+                    </div>
+                    <div class="stat-card ${safeValue(migrationSpeed.risk_score) >= 25 ? 'critical' : (safeValue(migrationSpeed.risk_score) >= 10 ? 'warning' : 'orange')}">
+                        <div class="stat-value orange" style="font-size:12px;">${migrationSpeed.verdict || 'N/A'}</div>
+                        <div class="stat-label">⚡ Migration Speed</div>
+                        <div class="stat-label">${formatTime(migrationSpeed.seconds_to_migrate)}</div>
+                    </div>
+                    <div class="stat-card ${priceVolume.correlation === 'NEGATIVE' ? 'warning' : 'green'}">
+                        <div class="stat-value green" style="font-size:14px;">${priceVolume.correlation || 'NEUTRAL'}</div>
+                        <div class="stat-label">📈 Price-Volume</div>
+                    </div>
+                </div>`;
+            
+            // РАЗДЕЛИТЕЛЬ (показываем только если есть революционные метрики)
+            if (revolutionary.revolutionary_score || temporalEntropy.entropy_score) {
+                html += `
+                    <div style="margin: 24px 0 16px 0;">
+                        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;"> Revolutionary Metrics(test)</h3>
+                    </div>
+
+                    <div class="stats-grid">
+                        <!-- Temporal Entropy -->
+                        <div class="stat-card ${temporalEntropy.is_critical ? 'critical' : (temporalEntropy.is_suspicious ? 'warning' : 'blue')}" style="border-left: 3px solid ${getTextColor(temporalEntropy.is_critical ? 'CRITICAL' : (temporalEntropy.is_suspicious ? 'HIGH' : 'LOW'))}">
+                            <div class="stat-label">⏱️ Temporal Entropy</div>
+                            <div class="stat-value" style="color: ${getTextColor(temporalEntropy.is_critical ? 'CRITICAL' : (temporalEntropy.is_suspicious ? 'HIGH' : 'LOW'))}">${((1 - safeValue(temporalEntropy.entropy_score, 0.5)) * 100).toFixed(1)}%</div>
+                            <div class="stat-label">Pattern: ${temporalEntropy.pattern || 'UNKNOWN'}</div>
+                            <div class="stat-label">CV: ${safeValue(temporalEntropy.coefficient_variation, 0).toFixed(2)}</div>
+                            ${temporalEntropy.is_critical ? '<div class="stat-label" style="color: #ef4444;">⚠️ FULLY AUTOMATED</div>' : ''}
+                            ${temporalEntropy.is_suspicious && !temporalEntropy.is_critical ? '<div class="stat-label" style="color: #f97316;">🤖 Bot Pattern</div>' : ''}
+                        </div>
+
+                        <!-- Anti-Fragmentation -->
+                        <div class="stat-card ${antiFragmentation.risk_level === 'CRITICAL' ? 'critical' : (antiFragmentation.risk_level === 'HIGH' ? 'warning' : 'blue')}" style="border-left: 3px solid ${getTextColor(antiFragmentation.risk_level)}">
+                            <div class="stat-label">🔍 Anti-Fragmentation</div>
+                            <div class="stat-value" style="color: ${getTextColor(antiFragmentation.risk_level)}">${formatPercent(antiFragmentation.artificial_inflation_percent)}%</div>
+                            <div class="stat-label">Fake holders</div>
+                            <div class="stat-label">Real: ${safeValue(antiFragmentation.estimated_real_holders)} / ${safeValue(antiFragmentation.total_holders_reported)}</div>
+                            ${antiFragmentation.risk_level === 'CRITICAL' ? '<div class="stat-label" style="color: #ef4444;">🎭 FAKE HOLDERS DETECTED</div>' : ''}
+                        </div>
+
+                        <!-- Domino Effect -->
+                        <div class="stat-card ${dominoEffect.risk_level === 'CRITICAL' ? 'critical' : (dominoEffect.risk_level === 'HIGH' ? 'warning' : 'blue')}" style="border-left: 3px solid ${getTextColor(dominoEffect.risk_level)}">
+                            <div class="stat-label">🎲 Domino Effect</div>
+                            <div class="stat-value" style="color: ${getTextColor(dominoEffect.risk_level)}">${(safeValue(dominoEffect.coordination_ratio) * 100).toFixed(1)}%</div>
+                            <div class="stat-label">Coordinated sells</div>
+                            <div class="stat-label">Clusters: ${safeValue(dominoEffect.coordinated_clusters)}</div>
+                            ${dominoEffect.coordination_detected ? '<div class="stat-label" style="color: #f97316;">👥 COORDINATED DUMP</div>' : ''}
+                        </div>
+
+                        <!-- Migration Footprint -->
+                        <div class="stat-card ${migrationFootprint.risk_level === 'CRITICAL' ? 'critical' : (migrationFootprint.risk_level === 'HIGH' ? 'warning' : 'blue')}" style="border-left: 3px solid ${getTextColor(migrationFootprint.risk_level)}">
+                            <div class="stat-label">👣 Migration Footprint</div>
+                            <div class="stat-value" style="color: ${getTextColor(migrationFootprint.risk_level)}">${(safeValue(migrationFootprint.sold_ratio) * 100).toFixed(1)}%</div>
+                            <div class="stat-label">Sold after migration</div>
+                            <div class="stat-label">Dump 5min: ${(safeValue(migrationFootprint.dump_ratio_5min) * 100).toFixed(1)}%</div>
+                            ${migrationFootprint.is_rugpull ? '<div class="stat-label" style="color: #ef4444;"></div>' : ''}
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <!-- Herding Index -->
+                        <div class="stat-card ${herdingIndex.risk_level === 'CRITICAL' ? 'critical' : (herdingIndex.risk_level === 'HIGH' ? 'warning' : 'blue')}" style="border-left: 3px solid ${getTextColor(herdingIndex.risk_level)}">
+                            <div class="stat-label">🐑 Herding Index</div>
+                            <div class="stat-value" style="color: ${getTextColor(herdingIndex.risk_level)}">${(safeValue(herdingIndex.herding_index) * 100).toFixed(1)}%</div>
+                            <div class="stat-label">Synchronization</div>
+                            <div class="stat-label">Windows: ${safeValue(herdingIndex.synchronized_windows)}</div>
+                            ${herdingIndex.bot_army_detected ? '<div class="stat-label" style="color: #f97316;">🤖 BOT ARMY DETECTED</div>' : ''}
+                        </div>
+
+                        <!-- Revolutionary Score -->
+                        <div class="stat-card ${revolutionary.risk_level === 'CRITICAL' ? 'critical' : (revolutionary.risk_level === 'HIGH' ? 'warning' : 'blue')}" style="border-left: 3px solid ${getTextColor(revolutionary.risk_level)}">
+                            <div class="stat-label">REVOLUTIONARY SCORE(test)</div>
+                            <div class="stat-value" style="color: ${getTextColor(revolutionary.risk_level)}; font-size: 32px;">${safeValue(revolutionary.revolutionary_score)}</div>
+                            <div class="stat-label">${revolutionary.risk_level || 'UNKNOWN'}</div>
+                            <div class="stat-label">Confidence: ${safeValue(revolutionary.confidence)}%</div>
+                            <div class="stat-label">Type: ${revolutionary.scam_type || 'N/A'}</div>
+                        </div>
+
+                        <!-- Malicious Supply Index (MSI) -->
+                        <div class="stat-card ${maliciousSupply.risk_level === 'CRITICAL' ? 'critical' : (maliciousSupply.risk_level === 'HIGH' ? 'warning' : 'blue')}" style="border-left: 3px solid ${getTextColor(maliciousSupply.risk_level)}">
+                            <div class="stat-label">⚠️ MSI (Malicious Supply)</div>
+                            <div class="stat-value" style="color: ${getTextColor(maliciousSupply.risk_level)}">${formatPercent(maliciousSupply.malicious_supply_percent)}%</div>
+                            <div class="stat-label">${maliciousSupply.risk_level || 'UNKNOWN'}</div>
+                            <div class="stat-label">Wallets: ${safeValue(maliciousSupply.malicious_wallets_count)}</div>
+                        </div>
+
+                        <!-- Suspicious Supply Index (SSI) -->
+                        <div class="stat-card ${suspiciousSupply.risk_level === 'CRITICAL' ? 'critical' : (suspiciousSupply.risk_level === 'HIGH' ? 'warning' : 'blue')}" style="border-left: 3px solid ${getTextColor(suspiciousSupply.risk_level || 'LOW')}">
+                            <div class="stat-label">🎯 SSI (Suspicious Supply)</div>
+                            <div class="stat-value" style="color: ${getTextColor(suspiciousSupply.risk_level || 'LOW')}">${formatPercent(suspiciousSupply.suspicious_supply_percent)}%</div>
+                            <div class="stat-label">${suspiciousSupply.risk_level || 'UNKNOWN'}</div>
+                            <div class="stat-label">Wallets: ${safeValue(suspiciousSupply.total_suspicious_wallets)}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Аномалии из risk_assessment
+            const anomalies = riskAssessment.anomalies || [];
+            if (anomalies.length > 0) {
+                html += `
+                    <div class="anomaly-list" style="margin-top: 20px;">
+                        <strong>⚠️ Detected Anomalies (${anomalies.length})</strong>
+                        ${anomalies.map(a => {
+                            let anomalyClass = 'anomaly-medium';
+                            if (a.score >= 25) anomalyClass = 'anomaly-critical';
+                            else if (a.score >= 15) anomalyClass = 'anomaly-high';
+                            return `
+                                <div class="anomaly-item ${anomalyClass}">
+                                    🔴 ${a.type}: ${a.detail} (${a.score} pts)
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            // Рекомендация
+            const recommendation = revolutionary.recommendation || riskAssessment.recommendation;
+            if (recommendation && recommendation !== 'LIKELY_LEGIT - No scam patterns detected') {
+                const riskLevel = revolutionary.risk_level || riskAssessment.level || 'MEDIUM';
+                html += `
+                    <div class="anomaly-list" style="margin-top: 20px; background: ${riskLevel === 'CRITICAL' ? 'rgba(239, 68, 68, 0.1)' : (riskLevel === 'HIGH' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(20, 241, 149, 0.1)')};">
+                        <strong>📋 Risk Assessment Recommendation</strong>
+                        <div class="anomaly-item" style="margin-top: 8px; border-left-color: ${getTextColor(riskLevel)};">
+                            🚨 ${recommendation}
+                        </div>
+                        ${revolutionary.confidence ? `<div style="margin-top: 8px; font-size: 11px; color: var(--text-tertiary);">
+                            Confidence: ${revolutionary.confidence}% | Type: ${revolutionary.scam_type || 'N/A'}
+                        </div>` : ''}
+                    </div>
+                `;
+            }
+
+            document.getElementById('metricsContent').innerHTML = html;
+        }
+        
+        async function renderChart(token) {
+            const chartContent = document.getElementById('chartContent');
+            if (!chartContent) return;
+            
+            chartContent.innerHTML = '<div class="loading">Loading chart...</div>';
+            
+            try {
+                const url = `${config.analysisApi}/api/chart/${token}?interval_minutes=5&exclude_pools=true`;
+                console.log('Fetching chart from:', url);
+                
+                const res = await fetch(url);
+                console.log('Chart response status:', res.status);
+                
+                if (!res.ok) {
+                    if (res.status === 404) {
+                        chartContent.innerHTML = '<div class="error">❌ Chart data not available for this token</div>';
+                    } else {
+                        chartContent.innerHTML = `<div class="error">❌ HTTP ${res.status}: Chart unavailable</div>`;
+                    }
+                    return;
+                }
+                
+                const data = await res.json();
+                console.log('Chart data received:', data);
+                
+                if (!data || !data.chart_base64) {
+                    chartContent.innerHTML = '<div class="error">❌ No chart data in response</div>';
+                    return;
+                }
+                
+                let patternClass = 'pattern-info';
+                if (data.pattern === 'PRE_MIGRATION_PUMP') patternClass = 'pattern-critical';
+                else if (data.pattern === 'POST_MIGRATION_COLLAPSE') patternClass = 'pattern-warning';
+                else if (data.pattern === 'POST_MIGRATION_ACCUMULATION') patternClass = 'pattern-success';
+                
+                chartContent.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">
+                            <span style="font-weight: 600;">📈 Activity Chart</span>
+                            <span class="pattern-badge ${patternClass}">${data.pattern || 'NORMAL'}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="legend">
+                                <div class="legend-item"><div style="width:32px;height:3px;background:#4e79a7;"></div><span>Transactions</span></div>
+                                <div class="legend-item"><div style="width:32px;height:3px;background:#2ecc71;"></div><span>Buy Volume</span></div>
+                                <div class="legend-item"><div style="width:32px;height:3px;background:#e74c3c;"></div><span>Sell Volume</span></div>
+                                <div class="legend-item"><div style="width:24px;height:2px;background:#ff8c00;"></div><span>Migration Event</span></div>
+                            </div>
+                            <img src="data:image/png;base64,${data.chart_base64}" style="width: 100%; border-radius: 12px; margin-top: 16px;">
+                            ${data.pattern_description ? `<div style="margin-top: 16px; padding: 12px; background: rgba(20,241,149,0.1); border-radius: 12px; font-size: 12px;">📊 ${data.pattern_description}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Chart error:', error);
+                chartContent.innerHTML = `<div class="error">❌ Failed to load chart: ${error.message}</div>`;
+            }
+        }
+        
+        let bubbleChart = null;
+        let currentChartData = null;
+        
+        async function renderBubbleMap(token) {
+            const container = document.getElementById('bubbleMapChart');
+            if (!container) return;
+        
+            container.innerHTML = '<div class="loading">Loading bubble map...</div>';
+        
+            try {
+                const response = await fetch(`${config.analysisApi}/api/bubblemap/${token}`);
+            
+                if (response.status === 404) {
+                    container.innerHTML = '<div class="error">❌ BubbleMap data not available</div>';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            
+                const data = await response.json();
+                
+                const holdersCountEl = document.getElementById('holdersCount');
+                if (holdersCountEl) {
+                    holdersCountEl.innerText = `${data.total_holders || 0} holders`;
+                }
+            
+                renderTopHoldersList(data);
+                renderBubbleMapCanvas(data, container);
+            
+            } catch (error) {
+                console.error('RenderBubbleMap error:', error);
+                container.innerHTML = `<div class="error">❌ Failed to load bubble map: ${error.message}</div>`;
+            }
+        }
+        
+        function renderBubbleMapCanvas(data, container) {
+            container.innerHTML = '';
+        
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.width = '100%';
+            wrapper.style.minHeight = '600px';
+            wrapper.style.background = '#0f1117';
+            wrapper.style.borderRadius = '16px';
+            wrapper.style.overflow = 'hidden';
+        
+            const canvas = document.createElement('canvas');
+            canvas.style.width = '100%';
+            canvas.style.height = 'auto';
+            canvas.style.display = 'block';
+            canvas.style.background = '#0f1117';
+            canvas.style.borderRadius = '16px';
+            canvas.style.cursor = 'pointer';
+        
+            wrapper.appendChild(canvas);
+            container.appendChild(wrapper);
+        
+            let placed = [];
+            let currentTooltip = null;
+            let hoverTimeout = null;
+        
+            function drawCanvas() {
+                const rect = wrapper.getBoundingClientRect();
+                let containerWidth = rect.width;
+                if (containerWidth < 600) containerWidth = 800;
+            
+                canvas.width = containerWidth;
+                canvas.height = 600;
+            
+                const ctx = canvas.getContext('2d');
+                const width = canvas.width;
+                const height = canvas.height;
+            
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#0f1117';
+                ctx.fillRect(0, 0, width, height);
+            
+                const botAddresses = new Set();
+                const insiderAddresses = new Set();
+                const sniperAddresses = new Set(data.sniper_addresses || []);
+            
+                if (data.holders) {
+                    data.holders.forEach(holder => {
+                        if (holder.is_bot) botAddresses.add(holder.address);
+                        if (holder.is_insider) insiderAddresses.add(holder.address);
+                    });
+                }
+            
+                const filteredHolders = (data.holders || []).filter(holder => {
+                    if (holder.is_bot || holder.is_insider || sniperAddresses.has(holder.address)) return true;
+                    return holder.share >= 0.05;
+                });
+            
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const sortedHolders = [...filteredHolders].sort((a, b) => b.share - a.share);
+            
+                function getRadius(share, isSpecial) {
+                    if (isSpecial && share < 0.05) return 10;
+                    let radius = 8 + Math.log10(share + 0.01) * 15;
+                    return Math.min(80, Math.max(8, radius));
+                }
+            
+                placed = [];
+                const maxRadius = Math.min(width / 2 - 50, height / 2 - 50);
+            
+                for (let idx = 0; idx < sortedHolders.length; idx++) {
+                    const holder = sortedHolders[idx];
+                    const isBot = botAddresses.has(holder.address);
+                    const isInsider = insiderAddresses.has(holder.address);
+                    const isSniper = sniperAddresses.has(holder.address);
+                    const isSpecial = isBot || isInsider || isSniper;
+                    const r = getRadius(holder.share, isSpecial);
+                
+                    if (idx === 0) {
+                        placed.push({ x: centerX, y: centerY, r: r, holder: holder, isBot: isBot, isInsider: isInsider, isSniper: isSniper });
+                    } else {
+                        const angle = idx * 0.3;
+                        const radius = Math.min(maxRadius, 30 + idx * 4);
+                        let x = centerX + Math.cos(angle) * radius;
+                        let y = centerY + Math.sin(angle) * radius;
+                    
+                        let collides = true;
+                        for (let attempt = 0; attempt < 30 && collides; attempt++) {
+                            collides = false;
+                            for (const existing of placed) {
+                                const dx = existing.x - x, dy = existing.y - y;
+                                if (Math.sqrt(dx * dx + dy * dy) < (existing.r + r + 5)) {
+                                    collides = true;
+                                    x = centerX + Math.cos(angle + attempt * 0.5) * (radius + attempt * 3);
+                                    y = centerY + Math.sin(angle + attempt * 0.5) * (radius + attempt * 3);
+                                    break;
+                                }
+                            }
+                        }
+                    
+                        if (!collides && x > r && x < width - r && y > r && y < height - r) {
+                            placed.push({ x: x, y: y, r: r, holder: holder, isBot: isBot, isInsider: isInsider, isSniper: isSniper });
+                        } else {
+                            let randomPlaced = false;
+                            for (let attempt = 0; attempt < 50; attempt++) {
+                                const randomX = centerX + (Math.random() - 0.5) * (width - 100);
+                                const randomY = centerY + (Math.random() - 0.5) * (height - 100);
+                                let collision = false;
+                                for (const existing of placed) {
+                                    const dx = existing.x - randomX, dy = existing.y - randomY;
+                                    if (Math.sqrt(dx * dx + dy * dy) < (existing.r + r + 5)) {
+                                        collision = true;
+                                        break;
+                                    }
+                                }
+                                if (!collision && randomX > r && randomX < width - r && randomY > r && randomY < height - r) {
+                                    placed.push({ x: randomX, y: randomY, r: r, holder: holder, isBot: isBot, isInsider: isInsider, isSniper: isSniper });
+                                    randomPlaced = true;
+                                    break;
+                                }
+                            }
+                            if (!randomPlaced) {
+                                placed.push({ x: centerX + (Math.random() - 0.5) * width * 0.6, y: centerY + (Math.random() - 0.5) * height * 0.6, r: r, holder: holder, isBot: isBot, isInsider: isInsider, isSniper: isSniper });
+                            }
+                        }
+                    }
+                }
+            
+                for (const bubble of placed) {
+                    const h = bubble.holder;
+                    const isBot = bubble.isBot;
+                    const isInsider = bubble.isInsider;
+                    const isSniper = bubble.isSniper;
+                
+                    ctx.beginPath();
+                    ctx.arc(bubble.x, bubble.y, bubble.r, 0, Math.PI * 2);
+                
+                    if (isInsider) ctx.fillStyle = '#9b59b6';
+                    else if (isSniper) ctx.fillStyle = '#c0392b';
+                    else if (isBot) ctx.fillStyle = '#e74c3c';
+                    else if (h.is_pool) ctx.fillStyle = '#3498db';
+                    else if (h.share > 5) ctx.fillStyle = '#e67e22';
+                    else if (h.share > 1) ctx.fillStyle = '#14f195';
+                    else ctx.fillStyle = '#4e79a7';
+                
+                    ctx.fill();
+                    ctx.strokeStyle = '#1a1d24';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                
+                    if (bubble.r > 25 && h.share > 1) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = `bold ${Math.min(14, bubble.r / 4)}px monospace`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(h.share.toFixed(1) + '%', bubble.x, bubble.y);
+                    }
+                }
+            
+                const insiderCount = data.holders ? data.holders.filter(h => h.is_insider).length : 0;
+                const insiderShare = data.holders ? data.holders.filter(h => h.is_insider).reduce((sum, h) => sum + h.share, 0).toFixed(2) : 0;
+            
+                const oldLegend = wrapper.querySelector('.bubble-legend');
+                const oldStats = wrapper.querySelector('.bubble-stats');
+                if (oldLegend) oldLegend.remove();
+                if (oldStats) oldStats.remove();
+            
+                const legendDiv = document.createElement('div');
+                legendDiv.className = 'bubble-legend';
+                legendDiv.style.cssText = 'position:absolute;bottom:20px;left:20px;background:#121723;border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:11px;z-index:10;';
+                legendDiv.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:12px;height:12px;border-radius:50%;background:#e67e22;"></div><span>Whale (>5%)</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:12px;height:12px;border-radius:50%;background:#14f195;"></div><span>Large (1-5%)</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:12px;height:12px;border-radius:50%;background:#e74c3c;"></div><span>Bot (${botAddresses.size})</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:12px;height:12px;border-radius:50%;background:#9b59b6;"></div><span>Insider (${insiderCount}) - ${insiderShare}%</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:#3498db;"></div><span>Liquidity Pool</span></div>
+                `;
+            
+                const statsDiv = document.createElement('div');
+                statsDiv.className = 'bubble-stats';
+                statsDiv.style.cssText = 'position:absolute;top:20px;right:20px;background:#121723;border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:11px;z-index:10;';
+                statsDiv.innerHTML = `
+                    <div><strong>📊 ${data.total_holders || 0} holders</strong></div>
+                    <div>🐋 Whales: ${data.stats?.whale_count || 0}</div>
+                    <div>🐳 Large: ${data.stats?.large_count || 0}</div>
+                    <div>🤖 Bots: ${data.stats?.bot_count || 0} (${data.stats?.bot_share || 0}%)</div>
+                    <div>🎯 Insiders: ${data.stats?.insider_count || insiderCount} (${data.stats?.insider_share || insiderShare}%)</div>
+                    <div style="margin-top:6px;padding-top:4px;border-top:1px solid var(--border);">👁️ Showing ${filteredHolders.length} wallets</div>
+                `;
+            
+                wrapper.appendChild(legendDiv);
+                wrapper.appendChild(statsDiv);
+            }
+        
+            function updateTooltip(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+            
+                let hovered = null;
+                for (const bubble of placed) {
+                    const dx = bubble.x - mouseX, dy = bubble.y - mouseY;
+                    if (Math.sqrt(dx * dx + dy * dy) < bubble.r) {
+                        hovered = bubble;
+                        break;
+                    }
+                }
+            
+                if (currentTooltip && currentTooltip.parentNode) {
+                    currentTooltip.remove();
+                    currentTooltip = null;
+                }
+            
+                if (hovered) {
+                    const h = hovered.holder;
+                    const isBot = hovered.isBot;
+                    const isInsider = hovered.isInsider;
+                    let type = '';
+                    if (isInsider) type = '🎯 INSIDER';
+                    else if (hovered.isSniper) type = '🎯 SNIPER';
+                    else if (isBot) type = '🤖 BOT';
+                    else if (h.is_pool) type = '🔄 POOL';
+                    else if (h.share > 5) type = '🐋 WHALE';
+                    else if (h.share > 1) type = '🐳 LARGE';
+                    else type = '👤 HOLDER';
+                
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'bubble-tooltip';
+                    tooltip.style.cssText = 'position:fixed;background:#121723;border:1px solid #14f195;border-radius:8px;padding:8px 12px;font-size:11px;font-family:monospace;pointer-events:none;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+                    tooltip.innerHTML = `<strong>${h.address?.slice(0, 14)}...</strong><br>Share: ${h.share}%<br>Balance: ${(h.balance / 1e6).toFixed(2)}M<br>TXs: ${h.tx_count}<br><span style="color:#14f195">${type}</span>`;
+                    tooltip.style.left = (e.clientX + 15) + 'px';
+                    tooltip.style.top = (e.clientY - 10) + 'px';
+                    document.body.appendChild(tooltip);
+                    currentTooltip = tooltip;
+                }
+            }
+        
+            let lastMoveTime = 0;
+            canvas.onmousemove = (e) => {
+                const now = Date.now();
+                if (now - lastMoveTime < 30) return;
+                lastMoveTime = now;
+                if (hoverTimeout) clearTimeout(hoverTimeout);
+                hoverTimeout = setTimeout(() => updateTooltip(e), 10);
+            };
+        
+            canvas.onmouseleave = () => {
+                if (hoverTimeout) clearTimeout(hoverTimeout);
+                if (currentTooltip && currentTooltip.parentNode) {
+                    currentTooltip.remove();
+                    currentTooltip = null;
+                }
+            };
+        
+            drawCanvas();
+        
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    if (wrapper && wrapper.parentElement) {
+                        drawCanvas();
+                    }
+                }, 200);
+            });
+        }
+        
+        function renderTopHoldersList(data) {
+            const container = document.getElementById('topHoldersList');
+            if (!container) return;
+        
+            const holders = data.holders || [];
+            const sortedHolders = [...holders].sort((a, b) => b.share - a.share);
+            const topHolders = sortedHolders.slice(0, 30);
+        
+            if (topHolders.length === 0) {
+                container.innerHTML = '<div class="loading">No holders data</div>';
+                return;
+            }
+        
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    ${topHolders.map((holder, index) => {
+                        let typeClass = '';
+                        let typeIcon = '';
+                        let typeText = '';
+        
+                        if (holder.is_insider) {
+                            typeClass = 'badge-insider';
+                            typeIcon = '🎯';
+                            typeText = 'Insider';
+                        } else if (holder.is_bot) {
+                            typeClass = 'badge-bot';
+                            typeIcon = '🤖';
+                            typeText = 'Bot';
+                        } else if (holder.is_pool) {
+                            typeClass = 'badge-info';
+                            typeIcon = '🔄';
+                            typeText = 'Pool';
+                        } else if (holder.share > 5) {
+                            typeClass = 'badge-whale';
+                            typeIcon = '🐋';
+                            typeText = 'Whale';
+                        } else if (holder.share > 1) {
+                            typeClass = 'badge';
+                            typeIcon = '🐳';
+                            typeText = 'Large';
+                        } else {
+                            typeClass = 'badge';
+                            typeIcon = '👤';
+                            typeText = 'Holder';
+                        }
+        
+                        const shareColor = holder.share > 5 ? '#e67e22' : (holder.share > 1 ? '#14f195' : '#94a3b8');
+        
+                        return `
+                            <div class="holder-item" 
+                                 style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-tertiary); border-radius: 10px; cursor: pointer; transition: all 0.2s; border-left: 3px solid ${shareColor};"
+                                 onmouseover="this.style.transform='translateX(5px)'; this.style.background='rgba(20,241,149,0.1)';" 
+                                 onmouseout="this.style.transform='translateX(0)'; this.style.background='var(--bg-tertiary)';" 
+                                 onclick="highlightHolder('${holder.address}')">
+                                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                                    <span style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); min-width: 28px;">#${index + 1}</span>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-family: monospace; font-size: 10px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${holder.address.slice(0, 8)}...${holder.address.slice(-6)}</div>
+                                        <div style="display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
+                                            <span class="${typeClass}" style="font-size: 8px; padding: 2px 6px;">${typeIcon} ${typeText}</span>
+                                            <span style="font-size: 9px; color: var(--text-tertiary);">📊 ${holder.tx_count} TXs</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="text-align: right; margin-left: 8px;">
+                                    <div style="font-size: 13px; font-weight: 700; color: ${shareColor};">${holder.share}%</div>
+                                    <div style="font-size: 9px; color: var(--text-tertiary);">${(holder.balance / 1e6).toFixed(1)}M</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        function highlightHolder(address) {
+            showToast(`🔍 Highlighting: ${address.slice(0, 12)}...`, false);
+        }
+        
+        async function loadSchedulerStatus() {
+            try {
+                const res = await fetch(`${config.analysisApi}/api/scheduler/status`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const schedulerRunning = document.getElementById('schedulerRunning');
+                    const schedulerCount = document.getElementById('schedulerCount');
+                    const schedulerLast = document.getElementById('schedulerLast');
+                    const schedulerInterval = document.getElementById('schedulerInterval');
+                    
+                    if (schedulerRunning) schedulerRunning.innerHTML = data.running ? '🟢 Running' : '🔴 Stopped';
+                    if (schedulerCount) schedulerCount.innerText = data.analyzed_tokens_count || 0;
+                    if (schedulerLast) schedulerLast.innerText = data.last_scan_time ? new Date(data.last_scan_time).toLocaleString() : 'Never';
+                    if (schedulerInterval) schedulerInterval.innerText = `${data.scan_interval_minutes || 60} min`;
+                }
+            } catch (e) {
+                console.error('Scheduler status error:', e);
+                const schedulerRunning = document.getElementById('schedulerRunning');
+                const schedulerCount = document.getElementById('schedulerCount');
+                const schedulerLast = document.getElementById('schedulerLast');
+                if (schedulerRunning) schedulerRunning.innerHTML = '🔴 Unknown';
+                if (schedulerCount) schedulerCount.innerText = '-';
+                if (schedulerLast) schedulerLast.innerText = 'API offline';
+            }
+        }
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        function saveSettings() {
+            config.mgmtApi = document.getElementById('mgmtApiUrl').value;
+            config.analysisApi = document.getElementById('analysisApiUrl').value;
+            config.apiKey = document.getElementById('apiKey').value;
+            localStorage.setItem('mgmtApi', config.mgmtApi);
+            localStorage.setItem('analysisApi', config.analysisApi);
+            localStorage.setItem('apiKey', config.apiKey);
+            showToast('Settings saved');
+            checkHealth();
+            loadSystemStats();
+            loadTokens(true);
+            loadHistory(true);
+        }
+        
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const tab = item.dataset.tab;
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.getElementById(`${tab}Tab`).classList.add('active');
+                
+                if (tab === 'tokens') loadTokens();
+                if (tab === 'history') loadHistory();
+                if (tab === 'scheduler') loadSchedulerStatus();
+                if (tab === 'stats') loadSystemStats();
+            });
+        });
+        
+        document.getElementById('analyzeBtn').addEventListener('click', () => analyzeToken());
+        document.getElementById('collectBtn').addEventListener('click', () => analyzeToken(document.getElementById('tokenAddress').value.trim()));
+        document.getElementById('startCollectionBtn').addEventListener('click', startBatchCollection);
+        document.getElementById('refreshTokensBtn').addEventListener('click', () => loadTokens(true));
+        document.getElementById('refreshJobBtn').addEventListener('click', checkJobStatus);
+        document.getElementById('clearLogsBtn').addEventListener('click', () => {
+            document.getElementById('logConsole').innerHTML = '<div class="log-line log-info">> Console cleared.</div>';
+        });
+        document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+        document.getElementById('startSchedulerBtn').addEventListener('click', async () => {
+            await fetch(`${config.analysisApi}/api/scheduler/start`, { method: 'POST' });
+            loadSchedulerStatus();
+            showToast('Scheduler started');
+        });
+        document.getElementById('stopSchedulerBtn').addEventListener('click', async () => {
+            await fetch(`${config.analysisApi}/api/scheduler/stop`, { method: 'POST' });
+            loadSchedulerStatus();
+            showToast('Scheduler stopped');
+        });
+        document.getElementById('scanNowBtn').addEventListener('click', async () => {
+            await fetch(`${config.analysisApi}/api/scheduler/scan-now?force=false`, { method: 'POST' });
+            showToast('Scan triggered');
+        });
+        document.getElementById('refreshStatsBtn').addEventListener('click', loadSystemStats);
+        
+        checkHealth();
+        loadSystemStats();
+        loadTokens();
+        loadHistory();
+        loadSchedulerStatus();
+        
+        setInterval(() => {
+            checkHealth();
+            loadSystemStats();
+        }, 30000);
+        
+        addLog('Platform initialized with cache system (5 min TTL).', 'success');
+    </script>
+</body>
+</html>

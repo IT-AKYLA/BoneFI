@@ -1,0 +1,367 @@
+<!-- data-management/static/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Data Management API</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0a0c10;
+            --bg-sidebar: #111316;
+            --bg-card: #15171c;
+            --bg-code: #0d0e12;
+            --primary: #14f195;
+            --primary-dark: #0ea5e9;
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --border: #22262e;
+            --get-color: #14f195;
+            --post-color: #3b82f6;
+            --delete-color: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            line-height: 1.6;
+        }
+
+        /* Боковая панель */
+        nav {
+            width: 280px;
+            height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            padding: 2rem 1.5rem;
+            overflow-y: auto;
+        }
+
+        nav h1 { 
+            font-size: 1.25rem; 
+            font-weight: 700;
+            margin-bottom: 2rem; 
+            color: var(--primary); 
+            display: flex; 
+            align-items: center;
+            gap: 10px;
+        }
+
+        nav h1 span {
+            font-size: 1.5rem;
+        }
+
+        nav ul { list-style: none; padding: 0; }
+        nav li { margin-bottom: 0.25rem; }
+        nav a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: block;
+            padding: 0.625rem 0.875rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        nav a:hover { 
+            color: var(--text-main); 
+            background: rgba(20, 241, 149, 0.1); 
+        }
+
+        /* Контентная область */
+        main {
+            margin-left: 280px;
+            padding: 2rem 3rem;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+        
+        h2 { 
+            font-size: 1.75rem; 
+            font-weight: 700; 
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            border-left: 3px solid var(--primary);
+            padding-left: 1rem;
+        }
+
+        /* Эндпоинты */
+        .endpoint-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            transition: all 0.2s;
+        }
+
+        .endpoint-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(20, 241, 149, 0.05);
+        }
+
+        .method-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge.get { background: rgba(20, 241, 149, 0.15); color: var(--get-color); border: 1px solid var(--get-color); }
+        .badge.post { background: rgba(59, 130, 246, 0.15); color: var(--post-color); border: 1px solid var(--post-color); }
+        .badge.delete { background: rgba(239, 68, 68, 0.15); color: var(--delete-color); border: 1px solid var(--delete-color); }
+
+        code.path {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--primary);
+            font-size: 1rem;
+            font-weight: 500;
+            background: var(--bg-code);
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+        }
+
+        .endpoint-desc {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Блоки кода */
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        /* Таблица параметров */
+        .params-table {
+            width: 100%;
+            margin: 1rem 0 0.5rem;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .params-table th {
+            text-align: left;
+            color: var(--text-muted);
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+        .params-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        .type-tag { 
+            color: var(--primary); 
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+        }
+
+        .required {
+            color: #ef4444;
+            font-size: 0.7rem;
+            margin-left: 4px;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-sidebar); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h1>
+        <span>💀</span>
+        Solana SigManagment 
+    </h1>
+    <ul>
+        <li><a href="#overview">Обзор</a></li>
+        <li><a href="#tokens">Токены</a></li>
+        <li><a href="#collect">Сбор данных</a></li>
+        <li><a href="#admin">Администрирование</a></li>
+    </ul>
+</nav>
+
+<main>
+    <section id="overview">
+        <h2>Data Management API</h2>
+        <div class="section-desc">
+            Управление сбором и хранением данных токенов Solana
+        </div>
+        
+        <div class="endpoint-card">
+            <div class="method-row">
+                <span class="badge get">GET</span>
+                <code class="path">/health</code>
+            </div>
+            <div class="endpoint-desc">Проверка работоспособности сервиса</div>
+            <pre><code>{
+  "status": "ok",
+  "service": "data-management"
+}</code></pre>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="method-row">
+                <span class="badge get">GET</span>
+                <code class="path">/stats</code>
+            </div>
+            <div class="endpoint-desc">Статистика Redis: количество токенов, использование памяти</div>
+            <pre><code>{
+  "tokens_count": 1,
+  "redis_memory_mb": 21.12,
+  "compressed_data_mb": 17.3,
+  "max_signatures_allowed": 100000
+}</code></pre>
+        </div>
+    </section>
+
+    <section id="tokens">
+        <h2>Токены</h2>
+        <div class="section-desc">
+            Получение информации о собранных токенах
+        </div>
+
+        <div class="endpoint-card">
+            <div class="method-row">
+                <span class="badge get">GET</span>
+                <code class="path">/tokens</code>
+            </div>
+            <div class="endpoint-desc">Список всех токенов в кэше</div>
+            
+            <table class="params-table">
+                <thead>
+                    <tr><th>Параметр</th><th>Тип</th><th>Описание</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>limit</td><td><span class="type-tag">integer</span></td><td>Количество записей (по умолчанию 20)</td><td class="type-tag">query</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="method-row">
+                <span class="badge get">GET</span>
+                <code class="path">/token/{mint}</code>
+            </div>
+            <div class="endpoint-desc">Детальная информация о токене (JSON)</div>
+            
+            <table class="params-table">
+                <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th><th></th></tr></thead>
+                <tbody><tr><td>mint</td><td><span class="type-tag">string</span></td><td>Адрес токена Solana</td><td class="type-tag">path</td></tr></tbody>
+            </table>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="method-row">
+                <span class="badge get">GET</span>
+                <code class="path">/token/{mint}/compressed</code>
+            </div>
+            <div class="endpoint-desc">Сжатый gzip файл с данными токена для передачи в data-analysis</div>
+            
+            <table class="params-table">
+                <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th><th></th></tr></thead>
+                <tbody><tr><td>mint</td><td><span class="type-tag">string</span></td><td>Адрес токена Solana</td><td class="type-tag">path</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="collect">
+        <h2>Сбор данных</h2>
+        <div class="section-desc">
+            Запуск сбора транзакций токена
+        </div>
+
+        <div class="endpoint-card">
+            <div class="method-row">
+                <span class="badge post">POST</span>
+                <code class="path">/collect</code>
+            </div>
+            <div class="endpoint-desc">Запускает сбор токена в фоновом режиме</div>
+            
+            <table class="params-table">
+                <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th><th></th></tr></thead>
+                <tbody>
+                    <tr><td>token_mint</td><td><span class="type-tag">string</span></td><td>Адрес токена Solana</td><td class="type-tag">body <span class="required">*</span></td></tr>
+                    <tr><td>force</td><td><span class="type-tag">boolean</span></td><td>Принудительный сбор (только для админа)</td><td class="type-tag">body</td></tr>
+                </tbody>
+            </table>
+
+            <pre><code>// Пример запроса
+curl -X POST "http://localhost:8001/collect" \
+  -H "Content-Type: application/json" \
+  -d '{"token_mint":"GmHwU83bB1QrdfdnoaoVKQjNBJQbtc32nTTJmjMApump","force":false}'
+
+// Пример ответа
+{
+  "status": "started",
+  "token_mint": "GmHwU83bB1QrdfdnoaoVKQjNBJQbtc32nTTJmjMApump",
+  "max_signatures": 100000,
+  "admin_mode": false
+}</code></pre>
+        </div>
+    </section>
+
+    <section id="admin">
+        <h2>Администрирование</h2>
+        <div class="section-desc">
+            Требуют API ключ в заголовке <code style="background:#1e293b;padding:2px 6px;border-radius:4px;">X-API-Key</code>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="method-row">
+                <span class="badge delete">DELETE</span>
+                <code class="path">/token/{mint}</code>
+            </div>
+            <div class="endpoint-desc">Удаление токена из кэша Redis</div>
+            
+            <table class="params-table">
+                <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th><th></th></tr></thead>
+                <tbody><tr><td>mint</td><td><span class="type-tag">string</span></td><td>Адрес токена Solana</td><td class="type-tag">path</td></tr></tbody>
+            </table>
+
+            <pre><code>// Пример удаления
+curl -X DELETE "http://localhost:8001/token/GmHwU83bB1QrdfdnoaoVKQjNBJQbtc32nTTJmjMApump" \
+  -H "X-API-Key: your-secret-key"</code></pre>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>
