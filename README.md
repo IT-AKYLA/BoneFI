@@ -82,9 +82,10 @@ cd backend/data-analysis && python run_api.py     # port 8000
 
 # Open web interface
 open frontend/client-management/web-dashboard/BoneFI.html
+
 Docker Deployment
-bash
 # Build and run all services
+docker-compose -f deploy/docker-compose.yml build --no-cache
 docker-compose -f deploy/docker-compose.yml up -d
 
 # Check status
