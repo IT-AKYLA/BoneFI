@@ -95,19 +95,15 @@ docker-compose -f deploy/docker-compose.yml logs -f
 
 # Stop all services
 docker-compose -f deploy/docker-compose.yml down
+
 API Examples
 bash
 # Analyze token
 curl "http://localhost:8000/api/analyze/sync/5YC49sjG8SVXbnbTMFnUQmsPsBXKfR3jYERpmcXTpump"
-
-# Get revolutionary score
-curl "http://localhost:8000/api/token/5YC49sjG8SVXbnbTMFnUQmsPsBXKfR3jYERpmcXTpump/revolutionary/score"
-
-# Get MSI (Malicious Supply Index)
-curl "http://localhost:8000/api/token/5YC49sjG8SVXbnbTMFnUQmsPsBXKfR3jYERpmcXTpump/malicious"
-
 # List top holders
 curl "http://localhost:8000/api/token/5YC49sjG8SVXbnbTMFnUQmsPsBXKfR3jYERpmcXTpump/holders?limit=20"
+...
+
 Testing
 bash
 # Run unit tests
@@ -119,7 +115,3 @@ pytest tests/integration/ -v -m "integration"
 
 # Run with coverage
 pytest --cov=backend --cov-report=html
-License
-MIT © 2025 BoneFi Team
-
-<div align="center"> <sub>Built for the Solana ecosystem — see the true holders</sub> </div> ```
